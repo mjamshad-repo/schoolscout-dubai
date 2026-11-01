@@ -26,7 +26,9 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .logo.sm{width:22px;height:22px;border-radius:6px}
 .ai-pill{font:600 .68rem var(--font-data);letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);padding:3px 7px;border-radius:999px}
 .hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),transparent 70%);border:1px solid var(--line);border-radius:18px;padding:24px max(16px,3vw)}
-@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:300px;justify-self:center}}
+@media (max-width:860px){.hero{grid-template-columns:minmax(0,1fr) 34%;gap:12px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.hero{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:200px;justify-self:center;order:-1}}
+.hero-art{max-height:300px}
 .hero-art{width:100%;height:auto;max-width:100%}
 .hero .lens{transform-origin:318px 112px;animation:scout 6s ease-in-out infinite}
 @keyframes scout{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-14px,6px) rotate(-6deg)}}
