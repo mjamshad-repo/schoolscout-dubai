@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="/favicon.svg">
 <meta property="og:title" content="SchoolScout Dubai">
 <meta property="og:description" content="Find a Dubai school that fits your family, with sources for every fee and rating.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b6e6e%22/%3E%3Cpath%20d%3D%22M32%2015%207%2026.5%2032%2038l25-11.5z%22%20fill%3D%22%23fff%22/%3E%3Cpath%20d%3D%22M17%2032v9.5c0%203.8%206.7%207.5%2015%207.5s15-3.7%2015-7.5V32l-15%207z%22%20fill%3D%22%23fff%22%20opacity%3D%22.86%22/%3E%3Cpath%20d%3D%22M52.5%2028v11%22%20stroke%3D%22%23ffc94a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22/%3E%3Ccircle%20cx%3D%2252.5%22%20cy%3D%2241%22%20r%3D%223.2%22%20fill%3D%22%23ffc94a%22/%3E%3Cpath%20d%3D%22M51%206.5l1.8%204.4%204.4%201.8-4.4%201.8L51%2018.9l-1.8-4.4-4.4-1.8%204.4-1.8z%22%20fill%3D%22%23ffc94a%22/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0b6e6e">
 <title>SchoolScout Dubai</title>
 <meta name="description" content="Shortlist Dubai private schools by budget, curriculum, KHDA rating and distance. Ask in plain words and get a cited answer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,6 +23,7 @@ html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-wi
   --bg:#f5f7f9; --surface:#ffffff; --ink:#14233a; --muted:#5a6779; --line:#dde3ea;
   --accent:#0b6e6e; --accent-ink:#ffffff; --accent-soft:#e2f1f0;
   --r-out:#0d6b3f; --r-vg:#2f8f4e; --r-good:#2a62a8; --r-acc:#b07400; --warn-bg:#fff4dc; --warn-fg:#7a5200;
+  --sun:#ffc94a; --kid1:#ef7f5a; --kid2:#5b8fd0; --sky:#d6ecf3; --skin:#f2c9a0; --on-accent:#ffffff;
   --font-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --font-body:"Source Sans 3",ui-sans-serif,system-ui,sans-serif;
   --font-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -27,11 +31,11 @@ html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-wi
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1622; --surface:#16202e; --ink:#e6edf5; --muted:#9aa7b8; --line:#26334a;
   --accent:#43b8b0; --accent-ink:#06201f; --accent-soft:#16312f;
-  --r-out:#4fc485; --r-vg:#7bd08f; --r-good:#7aa9ee; --r-acc:#e6b04a; --warn-bg:#3a2e12; --warn-fg:#f3cf7a; color-scheme:dark}}
+  --r-out:#4fc485; --r-vg:#7bd08f; --r-good:#7aa9ee; --r-acc:#e6b04a; --warn-bg:#3a2e12; --warn-fg:#f3cf7a; --sun:#f0bd45; --kid1:#e07a57; --kid2:#6c9bd8; --sky:#1f3a4a; --skin:#d9b08a; --on-accent:#06201f; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1622; --surface:#16202e; --ink:#e6edf5; --muted:#9aa7b8; --line:#26334a;
   --accent:#43b8b0; --accent-ink:#06201f; --accent-soft:#16312f;
-  --r-out:#4fc485; --r-vg:#7bd08f; --r-good:#7aa9ee; --r-acc:#e6b04a; --warn-bg:#3a2e12; --warn-fg:#f3cf7a; color-scheme:dark}
+  --r-out:#4fc485; --r-vg:#7bd08f; --r-good:#7aa9ee; --r-acc:#e6b04a; --warn-bg:#3a2e12; --warn-fg:#f3cf7a; --sun:#f0bd45; --kid1:#e07a57; --kid2:#6c9bd8; --sky:#1f3a4a; --skin:#d9b08a; --on-accent:#06201f; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--font-body)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
@@ -140,11 +144,42 @@ details.fees table{border-collapse:collapse;width:100%;margin-top:6px}
 details.fees td{padding:3px 0;border-bottom:1px solid var(--line)}
 details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-variant-numeric:tabular-nums}
 .fee .meta{font:400 .8rem var(--font-body)}
+
+/* Identity: logo, hero, stats, chat avatar */
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none}
+.logo{width:34px;height:34px;flex:none;border-radius:9px}
+.logo.sm{width:22px;height:22px;border-radius:6px}
+.ai-pill{font:600 .68rem var(--font-data);letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);padding:3px 7px;border-radius:999px}
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),transparent 70%);border:1px solid var(--line);border-radius:18px;padding:24px max(16px,3vw)}
+@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:300px;justify-self:center}}
+.hero-art{width:100%;height:auto;max-width:100%}
+.hero .lens{transform-origin:318px 112px;animation:scout 6s ease-in-out infinite}
+@keyframes scout{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-14px,6px) rotate(-6deg)}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 .8rem var(--font-body);color:var(--accent);margin-bottom:10px}
+.eyebrow-icon{width:20px;height:20px;border-radius:5px}
+.stats{list-style:none;padding:0;margin:18px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stats li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+.stats strong{font:700 1.25rem var(--font-display);font-variant-numeric:tabular-nums}
+.stats span{font-size:.8rem;color:var(--muted)}
+.msg.bot{display:flex;gap:10px;align-items:flex-start}
+.bot-col{min-width:0;flex:1}
+.who{font:600 .75rem var(--font-data);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.avatar{width:30px;height:30px;flex:none;border-radius:50%;background:var(--accent);color:var(--sun);display:grid;place-items:center}
+.avatar svg{width:18px;height:18px}
+.dots{display:inline-flex;gap:3px;vertical-align:middle;margin-right:6px}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 1.2s infinite both}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.chip{display:flex;gap:8px;align-items:flex-start}
+.chip svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent)}
+.foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.hero .lens,.dots i{animation:none}}
 </style>
 </head>
 <body>
 <header><div class="wrap">
-  <div class="brand">SchoolScout <small>Dubai</small></div>
+  <a class="brand" href="#ask" aria-label="SchoolScout home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>SchoolScout</span><small>Dubai</small><span class="ai-pill">AI</span></a>
   <nav aria-label="Main">
     <a href="#ask" data-view="ask">Ask</a>
     <a href="#explore" data-view="explore">Explore</a>
@@ -156,8 +191,51 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 <main class="wrap">
   <!-- ASK -->
   <section id="view-ask">
-    <h1>Find a Dubai school that fits your family</h1>
-    <p class="lede">Ask in plain words: budget, curriculum, your child's grade and where you live. SchoolScout searches all <span class="nSchools">236</span> KHDA-registered private schools and writes a cited shortlist.</p>
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><svg class="eyebrow-icon" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg> AI school finder for Dubai parents</span>
+        <h1>Find a Dubai school that fits your family</h1>
+        <p class="lede">Ask in plain words: budget, curriculum, your child's grade and where you live. SchoolScout searches every KHDA-registered private school and writes a shortlist you can check.</p>
+        <ul class="stats" aria-label="What SchoolScout covers">
+          <li><strong class="nSchools">236</strong><span>KHDA schools</span></li>
+          <li><strong id="statFees">229</strong><span>with fees by grade</span></li>
+          <li><strong id="statOut">23</strong><span>rated Outstanding</span></li>
+          <li><strong id="statYear">2026-27</strong><span>official KHDA fees</span></li>
+        </ul>
+      </div>
+      <svg class="hero-art" viewBox="0 0 400 260" role="img" aria-label="A school, two children with backpacks and a magnifying glass">
+      <circle cx="338" cy="52" r="26" fill="var(--sun)" opacity=".9"/>
+      <ellipse cx="200" cy="236" rx="186" ry="16" fill="var(--accent-soft)"/>
+      <g>
+        <rect x="96" y="104" width="168" height="124" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="3"/>
+        <path d="M84 110 180 52l96 58z" fill="var(--accent)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="160" y="74" width="40" height="28" rx="4" fill="var(--surface)" stroke="var(--ink)" stroke-width="3"/>
+        <circle cx="180" cy="88" r="9" fill="none" stroke="var(--ink)" stroke-width="2.5"/><path d="M180 82v6l4 3" stroke="var(--ink)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <line x1="180" y1="52" x2="180" y2="20" stroke="var(--ink)" stroke-width="3"/>
+        <path d="M180 22h28l-6 7 6 7h-28z" fill="var(--kid1)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+        <rect x="114" y="124" width="30" height="26" rx="3" fill="var(--sky)" stroke="var(--ink)" stroke-width="2.5"/>
+        <rect x="216" y="124" width="30" height="26" rx="3" fill="var(--sky)" stroke="var(--ink)" stroke-width="2.5"/>
+        <rect x="114" y="166" width="30" height="26" rx="3" fill="var(--sky)" stroke="var(--ink)" stroke-width="2.5"/>
+        <path d="M164 228v-50a16 16 0 0 1 32 0v50" fill="var(--kid2)" stroke="var(--ink)" stroke-width="3"/>
+      </g>
+      <g>
+        <circle cx="54" cy="160" r="13" fill="var(--skin)" stroke="var(--ink)" stroke-width="2.5"/>
+        <path d="M41 155c2-10 22-12 26 0" fill="var(--ink)"/>
+        <path d="M38 228v-40a16 16 0 0 1 32 0v40" fill="var(--kid1)" stroke="var(--ink)" stroke-width="3"/>
+        <rect x="28" y="184" width="14" height="26" rx="5" fill="var(--kid2)" stroke="var(--ink)" stroke-width="2.5"/>
+        <circle cx="300" cy="170" r="11" fill="var(--skin)" stroke="var(--ink)" stroke-width="2.5"/>
+        <path d="M288 166c1-9 20-11 24 0" fill="var(--ink)"/>
+        <path d="M287 228v-33a13 13 0 0 1 26 0v33" fill="var(--kid2)" stroke="var(--ink)" stroke-width="3"/>
+        <rect x="309" y="190" width="12" height="22" rx="4" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.5"/>
+      </g>
+      <g class="lens">
+        <circle cx="318" cy="112" r="34" fill="var(--accent-soft)" fill-opacity=".75" stroke="var(--ink)" stroke-width="4"/>
+        <line x1="342" y1="136" x2="370" y2="164" stroke="var(--ink)" stroke-width="9" stroke-linecap="round"/>
+        <path d="M318 92l3.5 8.5 8.5 3.5-8.5 3.5-3.5 8.5-3.5-8.5-8.5-3.5 8.5-3.5z" fill="var(--accent)"/>
+        <path d="M334 118l2 4.5 4.5 2-4.5 2-2 4.5-2-4.5-4.5-2 4.5-2z" fill="var(--sun)"/>
+      </g>
+    </svg>
+    </div>
     <div class="ask">
       <div class="panel" style="display:flex;flex-direction:column;min-width:0">
         <div class="thread" id="thread" aria-live="polite"></div>
@@ -244,7 +322,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
     </div>
   </section>
 </main>
-<footer><div class="wrap">SchoolScout · <span class="nSchools">236</span> KHDA-registered schools · Information only. Confirm fees and ratings on khda.gov.ae and with the school.</div></footer>
+<footer><div class="wrap foot"><svg class="logo sm" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>SchoolScout · <span class="nSchools">236</span> KHDA-registered schools · Information only. Confirm fees and ratings on khda.gov.ae and with the school.</span></div></footer>
 
 <script>
 /* MODE is "web" (server answers at /api/ask) or "artifact" (retrieval + Claude run in the page). Set by scripts/build-web.py. */
@@ -388,7 +466,11 @@ function md(text){
   return html.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
              .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
 }
-function bubble(role,html){ const d=document.createElement("div"); d.className="msg "+role; d.innerHTML=html; $("#thread").append(d); d.scrollIntoView({block:"nearest"}); return d; }
+const AVATAR='<span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.1 6.1 2.4-6.1 2.4L12 19.5l-2.4-6.1-6.1-2.4 6.1-2.4z" fill="currentColor"/><path d="M19 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" opacity=".7"/></svg></span>';
+function bubble(role,html){
+  const d=document.createElement("div"); d.className="msg "+role;
+  d.innerHTML = role==="bot" ? `${AVATAR}<div class="bot-col"><div class="who">SchoolScout AI</div>${html}</div>` : html;
+  $("#thread").append(d); d.scrollIntoView({block:"nearest"}); return d; }
 const SAMPLE_ERR={not_granted:"Claude isn't allowed for this page. Allow it from the page's permissions to get answers; Explore and Compare still work.",
   sampling_disabled:"Claude isn't available for this account. Explore and Compare still work.",
   rate_limited:"Too many questions in a short time. Wait a minute, then ask again.",
@@ -416,7 +498,7 @@ async function answerArtifact(q, signal, onText){
 async function ask(q){
   q=q.trim(); if(!q) return;
   bubble("user",esc(q));
-  const bot=bubble("bot",`<div class="retrieved"></div><div class="placeinfo"></div><div class="body thinking">Searching ${SCHOOLS.length} schools and writing a shortlist…</div>`);
+  const bot=bubble("bot",`<div class="retrieved"></div><div class="placeinfo"></div><div class="body thinking"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span> Searching ${SCHOOLS.length} schools and writing a shortlist…</div>`);
   const body=bot.querySelector(".body"), ret=bot.querySelector(".retrieved"), pinfo=bot.querySelector(".placeinfo");
   const showMeta=(ids,place,grade)=>{ if(ids?.length) ret.innerHTML=`<span class="label">Retrieved</span>`+ids.map(id=>`<button class="rid" type="button" data-rid="${id}">${id}</button>`).join(""); pinfo.textContent=[grade!=null?`Fees for ${GRADES[grade]}`:"",place?`distances from ${place} (straight line)`:""].filter(Boolean).join(" · "); };
   ctl=new AbortController(); $("#send").disabled=true; $("#stop").hidden=false;
@@ -437,18 +519,19 @@ $("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preven
 $("#stop").onclick=()=>ctl?.abort();
 document.addEventListener("click",e=>{
   const id=e.target.closest?.("[data-rid]")?.dataset.rid; if(!id) return;
-  location.hash="explore"; ["#fCur","#fNear","#fFee","#fTxt"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;
+  location.hash="explore"; ["#fCur","#fNear","#fFee","#fTxt","#fGrade"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;
   renderExplore();
   const pos=lastList.findIndex(x=>x.s.id===id); if(pos>=shown){shown=pos+1; renderExplore(false);}
   setTimeout(()=>{const c=$("#card-"+id); if(c){c.scrollIntoView({block:"center"});c.classList.add("flash");setTimeout(()=>c.classList.remove("flash"),1600)}},50);
 });
 
-const STARTERS=["CBSE school near Dubai Sports City, under AED 20,000, for KG1",
- "Outstanding British primary school near Arabian Ranches, budget up to AED 60,000",
- "American school in Al Qusais rated Good or better",
- "I need a school for my daughter"];
-$("#starters").innerHTML=STARTERS.map(s=>`<button class="chip" type="button">${esc(s)}</button>`).join("");
-$("#starters").addEventListener("click",e=>{if(e.target.matches(".chip")) ask(e.target.textContent)});
+const ICON={"pin": "<path d=\"M12 21s-6.5-6.1-6.5-11A6.5 6.5 0 0 1 18.5 10c0 4.9-6.5 11-6.5 11z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"12\" cy=\"10\" r=\"2.3\" fill=\"currentColor\"/>", "star": "<path d=\"M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/>", "book": "<path d=\"M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/>", "kid": "<circle cx=\"12\" cy=\"6.5\" r=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M6 21v-5a6 6 0 0 1 12 0v5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/>"};
+const STARTERS=[["pin","CBSE school near Dubai Sports City, under AED 20,000, for KG1"],
+ ["star","Outstanding British primary school near Arabian Ranches, budget up to AED 60,000"],
+ ["book","American school in Al Qusais rated Good or better, for Grade 3"],
+ ["kid","I need a school for my daughter"]];
+$("#starters").innerHTML=STARTERS.map(([i,s])=>`<button class="chip" type="button" data-q="${esc(s)}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[i]}</svg><span>${esc(s)}</span></button>`).join("");
+$("#starters").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) ask(b.dataset.q)});
 $("#aiNote").textContent = MODE==="web" ? "Answers are written by an AI that sees only the retrieved records. Always confirm fees with the school."
   : "The first answer asks you to allow Claude for this page. It uses your own Claude usage.";
 
@@ -460,7 +543,9 @@ function boot(){
   const curs={}; SCHOOLS.forEach(s=>s.curriculum.split(" / ").forEach(c=>curs[c]=(curs[c]||0)+1));
   $("#fCur").innerHTML='<option value="">All</option>'+Object.entries(curs).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<option value="${esc(c)}">${esc(c)} (${n})</option>`).join("");
   document.querySelectorAll(".nSchools").forEach(e=>e.textContent=SCHOOLS.length);
-  $("#nFees").textContent=SCHOOLS.filter(s=>s.fee_min_aed!=null).length;
+  $("#nFees").textContent=$("#statFees").textContent=SCHOOLS.filter(s=>s.fee_min_aed!=null).length;
+  { const yc={}; SCHOOLS.forEach(s=>{const m=(s.fee_source||"").match(/\((\d{4}-\d{2})\)/); if(m) yc[m[1]]=(yc[m[1]]||0)+1;}); const top=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0]; if(top) $("#statYear").textContent=top[0]; }
+  $("#statOut").textContent=SCHOOLS.filter(s=>s.khda_rating==="Outstanding").length;
   bubble("bot",`<div class="body"><p><strong>Hi, I'm SchoolScout.</strong> I know all ${SCHOOLS.length} KHDA-registered private schools in Dubai, with ratings, locations and contacts, and KHDA's official fees by grade for ${SCHOOLS.filter(s=>s.fee_min_aed!=null).length} of them. Tell me your budget, curriculum, your child's grade and where you live.</p></div>`);
   renderExplore(); route();
 }

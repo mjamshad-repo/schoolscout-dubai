@@ -1,0 +1,41 @@
+# Refreshes KHDA fees on the 1st of every month (and on demand). If anything changed, it commits the new data,
+# and Vercel redeploys the site automatically. Fees normally change once a year, when KHDA publishes the new year.
+name: Refresh KHDA fees
+
+on:
+  schedule:
+    - cron: "0 2 1 * *"        # 02:00 UTC on the 1st of each month (06:00 Dubai)
+  workflow_dispatch: {}          # "Run workflow" button in the GitHub Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install openpyxl
+      - name: Fetch fees from KHDA open data (one request per school)
+        run: node scripts/fetch-khda-fees.mjs
+      - name: Rebuild data and both front ends
+        run: |
+          python3 scripts/build-data.py
+          python3 scripts/build-web.py
+      - name: Check search still works
+        run: node scripts/test.mjs
+      - name: Commit if fees changed
+        run: |
+          if git diff --quiet -- data schools.json api/_schools.js index.html dist; then
+            echo "No fee changes."
+          else
+            git config user.name "schoolscout-bot"
+            git config user.email "schoolscout-bot@users.noreply.github.com"
+            git add data schools.json api/_schools.js index.html dist
+            git commit -m "Refresh KHDA fees ($(date -u +%Y-%m-%d))"
+            git push
+          fi

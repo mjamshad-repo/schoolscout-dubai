@@ -19,3 +19,34 @@ details.fees table{border-collapse:collapse;width:100%;margin-top:6px}
 details.fees td{padding:3px 0;border-bottom:1px solid var(--line)}
 details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-variant-numeric:tabular-nums}
 .fee .meta{font:400 .8rem var(--font-body)}
+
+/* Identity: logo, hero, stats, chat avatar */
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none}
+.logo{width:34px;height:34px;flex:none;border-radius:9px}
+.logo.sm{width:22px;height:22px;border-radius:6px}
+.ai-pill{font:600 .68rem var(--font-data);letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);padding:3px 7px;border-radius:999px}
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),transparent 70%);border:1px solid var(--line);border-radius:18px;padding:24px max(16px,3vw)}
+@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:300px;justify-self:center}}
+.hero-art{width:100%;height:auto;max-width:100%}
+.hero .lens{transform-origin:318px 112px;animation:scout 6s ease-in-out infinite}
+@keyframes scout{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-14px,6px) rotate(-6deg)}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 .8rem var(--font-body);color:var(--accent);margin-bottom:10px}
+.eyebrow-icon{width:20px;height:20px;border-radius:5px}
+.stats{list-style:none;padding:0;margin:18px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stats li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+.stats strong{font:700 1.25rem var(--font-display);font-variant-numeric:tabular-nums}
+.stats span{font-size:.8rem;color:var(--muted)}
+.msg.bot{display:flex;gap:10px;align-items:flex-start}
+.bot-col{min-width:0;flex:1}
+.who{font:600 .75rem var(--font-data);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.avatar{width:30px;height:30px;flex:none;border-radius:50%;background:var(--accent);color:var(--sun);display:grid;place-items:center}
+.avatar svg{width:18px;height:18px}
+.dots{display:inline-flex;gap:3px;vertical-align:middle;margin-right:6px}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 1.2s infinite both}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.chip{display:flex;gap:8px;align-items:flex-start}
+.chip svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent)}
+.foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.hero .lens,.dots i{animation:none}}

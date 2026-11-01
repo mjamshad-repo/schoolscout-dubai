@@ -72,7 +72,7 @@ def band(lo, hi):
             else "Premium (AED 45k-75k)" if m < 75000 else "Ultra-premium (AED 75k+)")
 
 STEPS = ["ECC", "Pre-KG / FS1", "KG1 / FS2", "KG2 / Year 1"] + [f"Grade {g} / Year {g+1}" for g in range(1, 13)]
-YEARS = {25: "2025-26", 26: "2026-27", 27: "2027-28"}
+YEARS = {y: f"{2000 + y}-{(y + 1) % 100:02d}" for y in range(20, 60)}   # academicYearId 26 = 2026-27
 KHDA_FEES = {}
 for line in open(os.path.join(ROOT, "data", "khda_fees_by_grade.txt")):
     if not line.strip() or line.startswith("#"): continue

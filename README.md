@@ -49,6 +49,15 @@ Node 18 or newer. No `npm install` needed.
 
 To refresh the school list, export a newer KHDA register into `data/`. Above a few thousand records, swap the keyword retrieval for embeddings.
 
+## Keeping fees current
+
+Fees change once a year, when KHDA approves each school's fees for the next academic year.
+
+- **Automatic:** `.github/workflows/refresh-fees.yml` runs on the 1st of every month (and from the Actions tab on demand). It re-fetches every school's fees from KHDA's open data API, rebuilds the site, runs the tests, and commits only if something changed. Vercel then redeploys on its own.
+- **Year switch:** the script picks the academic year that most schools already have, so the site moves to next year's fees once KHDA has published them for most schools, and every fee shows its year.
+- **Safety:** if fewer than 80% of schools return fees (for example, KHDA's API is down), the job fails and keeps the existing data.
+- **New or closed schools:** export a fresh register from KHDA once a year into `data/` and push; the next refresh picks it up.
+
 ## Files
 
 | Path | Purpose |
