@@ -3,7 +3,7 @@
 Ask in plain words, get a cited shortlist of Dubai private schools. A retrieval-augmented (RAG) assistant over KHDA ratings, fees, curriculum and area.
 
 - **All 236 KHDA-registered private schools** from KHDA's register (rating with inspection year, curriculum, area, map location, phone, website, inspection report).
-- **Fees for 35 schools** from published 2026-27 lists (2 older 2022 figures, flagged). Others show "Fee not on file".
+- **Official fees by grade for 229 schools** from KHDA's open data API (2026-27 for 223). Grade-aware: "KG1 under 20k" checks the KG1 fee.
 - **Distance search**: "near Sports City" is measured from KHDA map points (straight line).
 - **Views:** Ask (AI shortlist) · Explore (filters) · Compare (side by side) · About & sources.
 - **AI providers:** Google Gemini (free tier), Groq (free tier) or Claude (paid). One environment variable switches between them.
@@ -45,9 +45,9 @@ Node 18 or newer. No `npm install` needed.
 
 ## Update or extend the data
 
-`scripts/build-data.py` reads the newest `data/khda_register_*.xlsx` and merges the `FEES` table (keyed by exact KHDA name). Run `npm run data` (needs `pip install openpyxl`), then `npm run web`, which builds `index.html` (website) and `dist/artifact.html` (Claude artifact) from `web/app.src.html`.
+`scripts/build-data.py` reads the newest `data/khda_register_*.xlsx` and `data/khda_fees_by_grade.txt`. Refresh fees with `node scripts/fetch-khda-fees.mjs` (KHDA open data API, one polite request per school). Run `npm run data` (needs `pip install openpyxl`), then `npm run web`, which builds `index.html` (website) and `dist/artifact.html` (Claude artifact) from `web/app.src.html`.
 
-To refresh, export a newer KHDA register into `data/` and add fees to `FEES` as they are published. Above a few thousand records, swap the keyword retrieval for embeddings.
+To refresh the school list, export a newer KHDA register into `data/`. Above a few thousand records, swap the keyword retrieval for embeddings.
 
 ## Files
 

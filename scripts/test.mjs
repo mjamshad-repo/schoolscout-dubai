@@ -16,6 +16,8 @@ const cases = [
   { q: "IB school in Emirates Hills", check: h => h[0].s.name.startsWith("Dubai International Academy") },
   { q: "American school in Al Qusais", check: (h, n) => n.place?.key === "al qusais" && h[0].s.curriculum.includes("American") },
   { q: "French school near Oud Metha", check: h => h[0].s.curriculum.includes("French") && h[0].km < 3 },
+  { q: "British secondary school for Year 10 near Al Barsha under 60000", check: (h, n) => n.grade === 12 && h.slice(0, 5).every(x => x.s.fees_by_grade?.[12] != null) },
+  { q: "CBSE school near Sports City for KG1 under 20000", check: (h, n) => n.grade === 2 && h.slice(0, 3).every(x => x.s.fees_by_grade?.[2] != null && x.s.fees_by_grade[2] <= 20000) },
 ];
 
 let fail = 0;
@@ -23,7 +25,7 @@ for (const c of cases) {
   const { needs, hits } = retrieve(SCHOOLS, c.q, c.prev || []);
   const ok = !!c.check(hits, needs);
   if (!ok) fail++;
-  console.log(`${ok ? "PASS" : "FAIL"}  ${c.q}${needs.place ? `   [place: ${needs.place.label}]` : ""}\n      -> ${hits.slice(0, 6).map(h => `${h.s.name} (${h.score}${h.km != null ? `, ${h.km}km` : ""}${h.s.fee_min_aed != null ? `, AED ${h.s.fee_min_aed}` : ", no fee"})`).join(" | ")}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.q}${needs.place ? `   [place: ${needs.place.label}]` : ""}\n      -> ${hits.slice(0, 6).map(h => `${h.s.name} (${h.score}${h.km != null ? `, ${h.km}km` : ""}${needs.grade != null && h.s.fees_by_grade ? `, grade fee ${h.s.fees_by_grade[needs.grade] ?? "n/a"}` : h.s.fee_min_aed != null ? `, AED ${h.s.fee_min_aed}` : ", no fee"})`).join(" | ")}`);
 }
 console.log(fail ? `\n${fail} failing` : "\nall retrieval checks pass");
 process.exit(fail ? 1 : 0);

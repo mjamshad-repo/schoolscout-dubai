@@ -13,3 +13,9 @@
 .more{display:flex;justify-content:center;margin-top:18px}
 .placeinfo{font:500 .78rem var(--font-data);color:var(--muted);margin:-4px 0 8px}
 .cmp td a{color:var(--accent);font-weight:600;text-decoration:none}
+details.fees{font-size:.9rem}
+details.fees summary{cursor:pointer;color:var(--accent);font-weight:600}
+details.fees table{border-collapse:collapse;width:100%;margin-top:6px}
+details.fees td{padding:3px 0;border-bottom:1px solid var(--line)}
+details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-variant-numeric:tabular-nums}
+.fee .meta{font:400 .8rem var(--font-body)}

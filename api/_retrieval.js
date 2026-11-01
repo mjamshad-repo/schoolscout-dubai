@@ -69,8 +69,26 @@ export function km(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+export const STEPS = ["ECC", "Pre-KG / FS1", "KG1 / FS2", "KG2 / Year 1", ...Array.from({ length: 12 }, (_, i) => `Grade ${i + 1} / Year ${i + 2}`)];
+
+// "KG1", "FS2", "grade 3", "year 4", "1st standard", "class 5" -> index into STEPS
+export function parseGrade(t) {
+  let m;
+  if (/\b(ecc|toddler|nursery)\b/.test(t)) return 0;
+  if (/\b(pre[- ]?kg|fs ?1|foundation stage 1)\b/.test(t)) return 1;
+  if (/\b(kg ?1|fs ?2|lkg)\b/.test(t)) return 2;
+  if (/\b(kg ?2|ukg)\b/.test(t)) return 3;
+  if ((m = t.match(/\byear ?(\d{1,2})\b/)) && +m[1] >= 1 && +m[1] <= 13) return +m[1] + 2;
+  if ((m = t.match(/\b(?:grade|class|std|standard) ?(\d{1,2})\b/) || t.match(/\b(\d{1,2})(?:st|nd|rd|th)? ?(?:grade|standard|std|class)\b/))
+      && +m[1] >= 1 && +m[1] <= 12) return +m[1] + 3;
+  return undefined;
+}
+
+export const gradeFee = (s, g) => (g == null || !s.fees_by_grade) ? null : s.fees_by_grade[g];
+
 export function parseNeeds(q, schools = []) {
   const t = String(q).toLowerCase(), n = {};
+  const g = parseGrade(t); if (g !== undefined) n.grade = g;
   const m = t.match(/(?:under|below|less than|up to|upto|max(?:imum)?|within|budget(?: of| is)?|around|about)\s*(?:aed|dh|dhs)?\.?\s*([\d.,]+)\s*(k|,000|000)?/);
   if (m) { let v = parseFloat(m[1].replace(/,/g, "")); if (m[2] === "k" || v < 1000) v *= 1000; n.budget = v; }
   if (n.budget === undefined && /\b(affordable|cheap|cheapest|budget|low[- ]cost|economical)\b/.test(t)) n.budget = 20000;
@@ -88,10 +106,13 @@ function score(s, n) {
   if (n.curriculum) sc += s.curriculum.includes(n.curriculum) ? 5 : -4;
   const rank = RANK[s.khda_rating] ?? 0;
   if (n.minRating) sc += rank >= n.minRating ? 3 : -3;
+  const gf = gradeFee(s, n.grade);
+  if (n.grade != null && s.fees_by_grade && gf == null) sc -= 8;   // school does not offer that grade
+  const fee = n.grade != null && s.fees_by_grade ? gf : s.fee_min_aed;
   if (n.budget) {
-    if (s.fee_min_aed == null) sc -= 1;                       // unknown fee: keep, but after known fits
-    else if (s.fee_min_aed <= n.budget) sc += 3 + (n.budget - s.fee_min_aed) / n.budget;
-    else sc += s.fee_min_aed <= n.budget * 1.2 ? 0.5 : -4;
+    if (fee == null) sc -= 1;                                  // unknown fee: keep, but after known fits
+    else if (fee <= n.budget) sc += 3 + (n.budget - fee) / n.budget;
+    else sc += fee <= n.budget * 1.2 ? 0.5 : -4;
   }
   if (n.place && typeof s.lat === "number") {
     const d = km(n.place, s);
@@ -106,7 +127,7 @@ function score(s, n) {
 export function retrieve(schools, question, previous = [], k = 10) {
   const n = { terms: [] };
   for (const p of [...previous.slice(-2).map(q => parseNeeds(q, schools)), parseNeeds(question, schools)]) {
-    for (const key of ["budget", "curriculum", "minRating", "place"]) if (p[key] !== undefined) n[key] = p[key];
+    for (const key of ["budget", "curriculum", "minRating", "place", "grade"]) if (p[key] !== undefined) n[key] = p[key];
     n.terms.push(...p.terms);
   }
   const hits = schools.map(s => ({ s, score: score(s, n), km: n.place && typeof s.lat === "number" ? Math.round(km(n.place, s) * 10) / 10 : null }))
@@ -116,13 +137,18 @@ export function retrieve(schools, question, previous = [], k = 10) {
 
 const fmtAed = v => "AED " + Number(v).toLocaleString("en-US");
 
-export function recordText(s, distKm = null, placeLabel = "") {
-  const fee = s.fee_min_aed != null
-    ? `Annual tuition: ${fmtAed(s.fee_min_aed)} (lowest grade) to ${fmtAed(s.fee_max_aed)} (highest grade). Fee source: ${s.fee_source}`
-    : "Annual tuition: not on file (check the school or its KHDA fee sheet)";
+export function recordText(s, distKm = null, placeLabel = "", grade = null) {
+  const gf = gradeFee(s, grade);
+  let fee;
+  if (s.fee_min_aed == null) fee = "Annual tuition: not on file";
+  else {
+    fee = `Annual tuition: ${fmtAed(s.fee_min_aed)} (lowest grade) to ${fmtAed(s.fee_max_aed)} (highest grade)`;
+    if (grade != null && s.fees_by_grade) fee += gf != null ? `. For ${STEPS[grade]}: ${fmtAed(gf)} a year` : `. Does NOT offer ${STEPS[grade]}`;
+    fee += `. Source: ${s.fee_source}`;
+  }
   return `[${s.id}] ${s.name}
 Curriculum: ${s.curriculum} | KHDA rating: ${s.khda_rating}${s.rating_year ? ` (${s.rating_year} inspection)` : ""}
 ${fee}
-Area: ${s.area}${distKm != null ? ` | Straight-line distance from ${placeLabel}: about ${distKm} km` : ""} | Grades: ${s.grades}
-Website: ${s.website || "not listed"} | Phone: ${s.phone || "not listed"}${s.notes ? "\nNote: " + s.notes : ""}${s.stale ? "\nCAUTION: fee is from 2022; the current fee is likely higher." : ""}`;
+Area: ${s.area}${distKm != null ? ` | Straight-line distance from ${placeLabel}: about ${distKm} km` : ""} | Grades offered: ${s.grades}
+Website: ${s.website || "not listed"} | Phone: ${s.phone || "not listed"}${s.notes ? "\nNote: " + s.notes : ""}`;
 }

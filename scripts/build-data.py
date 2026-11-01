@@ -13,48 +13,10 @@ import openpyxl
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-KT   = "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)"
-GN26 = "Gulf News, 6 Aug 2026 (2026-27 fees)"
-GN22 = "Gulf News, 6 Sep 2022 (older fees; verify the current fee)"
 
-# exact KHDA name: (lowest fee, highest fee, grades, fee source, note)
-FEES = {
- "Dubai International Academy L.L.C": (44979, 79696, "", KT, ""),
- "Deira International School": (44616, 89889, "", KT, ""),
- "Jumeirah English Speaking School": (54129, 65097, "", KT, ""),
- "Kings School Al Barsha L.L.C": (57999, 105873, "", KT, ""),
- "Repton School": (57178, 102753, "", KT, ""),
- "Jumeirah English Speaking School (Br)": (54129, 104544, "", KT, ""),
- "Kings School Dubai L.L.C": (47179, 71801, "Primary", KT, ""),
- "Dubai English Speaking School - (College)": (84326, 90633, "Secondary", KT, ""),
- "Dubai English Speaking School": (43084, 53320, "Primary", KT, ""),
- "Dubai College": (97415, 110305, "Secondary", KT, ""),
- "GEMS Jumeira Primary School - Dubai Branch": (44200, 55714, "Primary", KT, ""),
- "GEMS Wellington International School - Dubai Branch": (47527, 103399, "", KT, ""),
- "Horizons English School L.L.C": (43849, 58825, "Primary", KT, ""),
- "Jumeirah College": (78496, 98681, "Secondary", KT, ""),
- "Nord Anglia International School L.L.C": (69625, 105288, "", KT, ""),
- "Safa Community School LLC": (54437, 89440, "", KT, ""),
- "Victory Heights Primary School L.L.C": (40138, 54733, "Primary", KT, ""),
- "Dubai British School": (53027, 79541, "", KT, ""),
- "Dubai British School Jumeirah Park": (65719, 111799, "", KT, ""),
- "GEMS Dubai American Academy - Dubai Branch": (66185, 93300, "", KT, ""),
- "GEMS Modern Academy": (38246, 73876, "", KT, ""),
- "Lycee Francais International Georges Pompidou School Oud Metha": (29488, 62363, "", KT, "published range may cover both Lycee Pompidou Oud Metha campuses"),
- "Delhi Private School L.L.C": (11389, 15842, "KG1-Grade 12", GN26, ""),
- "The Winchester School - DUBAI BRANCH": (14950, 33352, "FS1-Year 13", GN26, ""),
- "JSS International School L.L.C": (17214, 41513, "KG1-Grade 12", GN26, ""),
- "GEMS New Millennium School L.L.C": (23143, 33557, "", GN26, "fee range is for the Indian curriculum section"),
- "Credence High School L.L.C": (17673, 29486, "KG1-Grade 12", GN26, ""),
- "GEMS Our Own Indian School": (7389, 15336, "KG1-Grade 12", GN26, ""),
- "JSS Private School L.L.C": (12731, 26375, "KG1-Grade 12", GN26, ""),
- "GEMS Our Own English High School": (7858, 16549, "KG1-Grade 12", GN26, ""),
- "The Indian High School": (8625, 13815, "Grade 5-Grade 12", GN26, ""),
- "GEMS Founders School - Dubai Branch": (24749, 37124, "FS1-Year 13", GN26, ""),
- "The Millenium School": (18308, 26906, "KG1-Grade 12", GN26, ""),
- "Ambassador School": (21123, 42298, "Pre-primary-Grade 12", GN22, ""),
- "Woodlem Park School L.L.C": (12000, 23000, "Pre-primary-Grade 10", GN22, ""),
-}
+# Optional manual fee overrides, keyed by exact KHDA name: (lowest, highest, grades, source, note).
+# Normally empty: fees come from KHDA's open data (data/khda_fees_by_grade.txt).
+FEES = {}
 
 def clean_name(n):
     n = re.sub(r"\s*(L\.?L\.?C\.?|LLC)\b\.?", "", n, flags=re.I).strip(" -,")
@@ -109,6 +71,16 @@ def band(lo, hi):
     return ("Budget (avg under AED 20k)" if m < 20000 else "Mid (AED 20k-45k)" if m < 45000
             else "Premium (AED 45k-75k)" if m < 75000 else "Ultra-premium (AED 75k+)")
 
+STEPS = ["ECC", "Pre-KG / FS1", "KG1 / FS2", "KG2 / Year 1"] + [f"Grade {g} / Year {g+1}" for g in range(1, 13)]
+YEARS = {25: "2025-26", 26: "2026-27", 27: "2027-28"}
+KHDA_FEES = {}
+for line in open(os.path.join(ROOT, "data", "khda_fees_by_grade.txt")):
+    if not line.strip() or line.startswith("#"): continue
+    cid, yr, ncur, mx, steps = line.strip().split("|")
+    vals = [int(v) if v else None for v in steps.split(",")]
+    if any(v is not None for v in vals):
+        KHDA_FEES[int(cid)] = {"year": YEARS.get(int(yr), yr), "steps": vals, "max": int(mx), "multi": int(ncur) > 1}
+
 src = sorted(glob.glob(os.path.join(ROOT, "data", "khda_register_*.xlsx")))[-1]
 wb = openpyxl.load_workbook(src, read_only=True)
 rows = list(wb.active.iter_rows(values_only=True))
@@ -121,6 +93,16 @@ out = []
 for r in sorted(reg, key=lambda r: r["name_eng"].lower()):
     f = FEES.get(r["name_eng"]); unused.discard(r["name_eng"])
     lo, hi, grades, fsrc, note = f if f else (None, None, "", "", "")
+    k = KHDA_FEES.get(r.get("educationcenterid"))
+    steps = None
+    if k:
+        steps = k["steps"]
+        present = [i for i, v in enumerate(steps) if v is not None]
+        lo, hi = min(v for v in steps if v is not None), k["max"]
+        grades = f"{STEPS[present[0]]} to {STEPS[present[-1]]}"
+        fsrc = f"KHDA open data, fees by grade ({k['year']})"
+        note = "fees differ by curriculum or section; lowest shown per grade" if k["multi"] else ""
+        if k["year"] != "2026-27": note = (note + "; " if note else "") + f"latest KHDA fees are for {k['year']}"
     est = r.get("establishedon")
     out.append({
         "name": clean_name(r["name_eng"]),
@@ -130,7 +112,7 @@ for r in sorted(reg, key=lambda r: r["name_eng"].lower()):
         "rating_year": r.get("inspectionyear") or "",
         "area": title_area(r.get("areaen")),
         "lat": coords(r.get("lat"), r.get("long"))[0], "lng": coords(r.get("lat"), r.get("long"))[1],
-        "fee_min_aed": lo, "fee_max_aed": hi, "fee_band": band(lo, hi),
+        "fee_min_aed": lo, "fee_max_aed": hi, "fee_band": band(lo, hi), "fees_by_grade": steps,
         "fee_source": fsrc, "stale": "2022" in fsrc,
         "grades": grades or "Not in source",
         "phone": str(r.get("telephone") or ""), "email": r.get("email") or "",
@@ -154,5 +136,6 @@ js = json.dumps(out, ensure_ascii=False, separators=(",", ":"))
 open(os.path.join(ROOT, "schools.json"), "w").write(js)
 open(os.path.join(ROOT, "api", "_schools.js"), "w").write("// Generated by scripts/build-data.py. Do not edit by hand.\nexport const SCHOOLS = " + js + ";\n")
 withfee = sum(s["fee_min_aed"] is not None for s in out)
+print(f"KHDA per-grade fees: {sum(s['fees_by_grade'] is not None for s in out)}")
 print(f"no valid map location: {sum(s['lat'] is None for s in out)}")
 print(f"{len(out)} schools; with fees: {withfee} (stale {sum(s['stale'] for s in out)}); register {register_date}")
