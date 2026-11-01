@@ -9,10 +9,10 @@
   "fee_band": "Premium (AED 45k-75k)",
   "area": "Emirates Hills",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH002",
@@ -24,10 +24,10 @@
   "fee_band": "Premium (AED 45k-75k)",
   "area": "Dubai Festival City",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH003",
@@ -37,12 +37,12 @@
   "fee_min_aed": 54129,
   "fee_max_aed": 65097,
   "fee_band": "Premium (AED 45k-75k)",
-  "area": "Jumeirah",
+  "area": "Al Safa First (Jumeirah)",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH004",
@@ -52,12 +52,12 @@
   "fee_min_aed": 57999,
   "fee_max_aed": 105873,
   "fee_band": "Ultra-premium (AED 75k+)",
-  "area": "Al Barsha South",
+  "area": "Al Barsha Second",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH005",
@@ -67,12 +67,12 @@
   "fee_min_aed": 57178,
   "fee_max_aed": 102753,
   "fee_band": "Ultra-premium (AED 75k+)",
-  "area": "Nad Al Sheba",
+  "area": "Nad Al Sheba Third",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH006",
@@ -84,10 +84,10 @@
   "fee_band": "Ultra-premium (AED 75k+)",
   "area": "Arabian Ranches",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH007",
@@ -97,12 +97,12 @@
   "fee_min_aed": 47179,
   "fee_max_aed": 71801,
   "fee_band": "Premium (AED 45k-75k)",
-  "area": "Umm Suqeim",
+  "area": "Umm Suqeim Third",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH008",
@@ -114,10 +114,10 @@
   "fee_band": "Ultra-premium (AED 75k+)",
   "area": "Dubai Academic City",
   "grades": "Secondary",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH009",
@@ -129,10 +129,10 @@
   "fee_band": "Premium (AED 45k-75k)",
   "area": "Oud Metha",
   "grades": "Primary",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH010",
@@ -142,12 +142,12 @@
   "fee_min_aed": 97415,
   "fee_max_aed": 110305,
   "fee_band": "Ultra-premium (AED 75k+)",
-  "area": "Al Sufouh",
+  "area": "Al Sufouh First",
   "grades": "Secondary",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH011",
@@ -157,12 +157,12 @@
   "fee_min_aed": 44200,
   "fee_max_aed": 55714,
   "fee_band": "Premium (AED 45k-75k)",
-  "area": "Al Safa",
+  "area": "Jumeira Third (Jumeirah)",
   "grades": "Primary",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH012",
@@ -172,12 +172,12 @@
   "fee_min_aed": 47527,
   "fee_max_aed": 103399,
   "fee_band": "Ultra-premium (AED 75k+)",
-  "area": "Al Sufouh",
+  "area": "Al Sufouh First",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH013",
@@ -187,12 +187,12 @@
   "fee_min_aed": 43849,
   "fee_max_aed": 58825,
   "fee_band": "Premium (AED 45k-75k)",
-  "area": "Al Safa",
+  "area": "Al Wasl",
   "grades": "Primary",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH014",
@@ -202,12 +202,12 @@
   "fee_min_aed": 78496,
   "fee_max_aed": 98681,
   "fee_band": "Ultra-premium (AED 75k+)",
-  "area": "Al Safa",
+  "area": "Al Safa First",
   "grades": "Secondary",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH015",
@@ -217,12 +217,12 @@
   "fee_min_aed": 69625,
   "fee_max_aed": 105288,
   "fee_band": "Ultra-premium (AED 75k+)",
-  "area": "Al Barsha South",
+  "area": "Al Barsha Second",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH016",
@@ -232,12 +232,12 @@
   "fee_min_aed": 54437,
   "fee_max_aed": 89440,
   "fee_band": "Premium (AED 45k-75k)",
-  "area": "Al Barsha South",
+  "area": "Al Barsha South First",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH017",
@@ -247,12 +247,12 @@
   "fee_min_aed": 40138,
   "fee_max_aed": 54733,
   "fee_band": "Premium (AED 45k-75k)",
-  "area": "Victory Heights (Dubai Sports City)",
+  "area": "Dubai Sports City (Victory Heights)",
   "grades": "Primary",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH018",
@@ -264,10 +264,10 @@
   "fee_band": "Premium (AED 45k-75k)",
   "area": "Emirates Hills",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH019",
@@ -279,10 +279,10 @@
   "fee_band": "Ultra-premium (AED 75k+)",
   "area": "Jumeirah Park",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH020",
@@ -292,12 +292,12 @@
   "fee_min_aed": 66185,
   "fee_max_aed": 93300,
   "fee_band": "Ultra-premium (AED 75k+)",
-  "area": "Al Barsha",
+  "area": "Al Barsha South First",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH021",
@@ -307,12 +307,12 @@
   "fee_min_aed": 38246,
   "fee_max_aed": 73876,
   "fee_band": "Premium (AED 45k-75k)",
-  "area": "Nad Al Sheba",
+  "area": "Nad Al Sheba First",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH022",
@@ -324,10 +324,10 @@
   "fee_band": "Premium (AED 45k-75k)",
   "area": "Oud Metha",
   "grades": "Not in source",
-  "rating_source": "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)",
+  "rating_source": "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)",
   "fee_source": "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)",
   "stale": false,
-  "notes": "area: general knowledge, not from the cited source"
+  "notes": "area from KHDA Education Directory (28 Oct 2026)"
  },
  {
   "id": "SCH023",

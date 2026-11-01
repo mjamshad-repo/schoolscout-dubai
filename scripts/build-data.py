@@ -12,33 +12,34 @@ KT   = "Khaleej Times, 15 Jul 2026 (2026-27 fees; fees frozen for 2026-27)"
 KTR  = "Khaleej Times, 15 Jul 2026 (list of 23 Outstanding schools)"
 GN26 = "Gulf News, 6 Aug 2026 (KHDA rating and 2026-27 fees)"
 GN22 = "Gulf News, 6 Sep 2022 (rating and fees at that date; verify current values)"
-GK   = "area: general knowledge, not from the cited source"
+KH   = "KHDA Education Directory, Top Rated list (page updated 28 Oct 2026)"
+GK   = "area from KHDA Education Directory (28 Oct 2026)"
 
 # name, curriculum, rating, fee_min, fee_max, area, grades, rating_source, fee_source, notes
 SCHOOLS = [
  # ---- Outstanding (all 22 schools with fees in the Khaleej Times July 2026 table) ----
- ("Dubai International Academy, Emirates Hills","IB","Outstanding",44979,79696,"Emirates Hills","",KTR,KT,GK),
- ("Deira International School","IB / British","Outstanding",44616,89889,"Dubai Festival City","",KTR,KT,GK),
- ("Jumeirah English Speaking School, Jumeirah","British","Outstanding",54129,65097,"Jumeirah","",KTR,KT,GK),
- ("Kings' School Al Barsha","British","Outstanding",57999,105873,"Al Barsha South","",KTR,KT,GK),
- ("Repton School Dubai","British","Outstanding",57178,102753,"Nad Al Sheba","",KTR,KT,GK),
- ("Jumeirah English Speaking School, Arabian Ranches","British / IB","Outstanding",54129,104544,"Arabian Ranches","",KTR,KT,GK),
- ("Kings' School Dubai","British","Outstanding",47179,71801,"Umm Suqeim","",KTR,KT,GK),
- ("Dubai English Speaking College","British","Outstanding",84326,90633,"Dubai Academic City","Secondary",KTR,KT,GK),
- ("Dubai English Speaking School","British","Outstanding",43084,53320,"Oud Metha","Primary",KTR,KT,GK),
- ("Dubai College","British","Outstanding",97415,110305,"Al Sufouh","Secondary",KTR,KT,GK),
- ("GEMS Jumeirah Primary School","British","Outstanding",44200,55714,"Al Safa","Primary",KTR,KT,GK),
- ("GEMS Wellington International School","British / IB","Outstanding",47527,103399,"Al Sufouh","",KTR,KT,GK),
- ("Horizons English School","British","Outstanding",43849,58825,"Al Safa","Primary",KTR,KT,GK),
- ("Jumeirah College","British","Outstanding",78496,98681,"Al Safa","Secondary",KTR,KT,GK),
- ("Nord Anglia International School Dubai","British / IB","Outstanding",69625,105288,"Al Barsha South","",KTR,KT,GK),
- ("Safa Community School","British / IB","Outstanding",54437,89440,"Al Barsha South","",KTR,KT,GK),
- ("Victory Heights Primary School","British","Outstanding",40138,54733,"Victory Heights (Dubai Sports City)","Primary",KTR,KT,GK),
- ("Dubai British School Emirates Hills","British","Outstanding",53027,79541,"Emirates Hills","",KTR,KT,GK),
- ("Dubai British School Jumeirah Park","British","Outstanding",65719,111799,"Jumeirah Park","",KTR,KT,GK),
- ("GEMS Dubai American Academy","American","Outstanding",66185,93300,"Al Barsha","",KTR,KT,GK),
- ("GEMS Modern Academy","Indian (CBSE) / IB","Outstanding",38246,73876,"Nad Al Sheba","",KTR,KT,GK),
- ("Lycée Français International Georges Pompidou","French","Outstanding",29488,62363,"Oud Metha","",KTR,KT,GK),
+ ("Dubai International Academy, Emirates Hills","IB","Outstanding",44979,79696,"Emirates Hills","",KH,KT,GK),
+ ("Deira International School","IB / British","Outstanding",44616,89889,"Dubai Festival City","",KH,KT,GK),
+ ("Jumeirah English Speaking School, Jumeirah","British","Outstanding",54129,65097,"Al Safa First (Jumeirah)","",KH,KT,GK),
+ ("Kings' School Al Barsha","British","Outstanding",57999,105873,"Al Barsha Second","",KH,KT,GK),
+ ("Repton School Dubai","British","Outstanding",57178,102753,"Nad Al Sheba Third","",KH,KT,GK),
+ ("Jumeirah English Speaking School, Arabian Ranches","British / IB","Outstanding",54129,104544,"Arabian Ranches","",KH,KT,GK),
+ ("Kings' School Dubai","British","Outstanding",47179,71801,"Umm Suqeim Third","",KH,KT,GK),
+ ("Dubai English Speaking College","British","Outstanding",84326,90633,"Dubai Academic City","Secondary",KH,KT,GK),
+ ("Dubai English Speaking School","British","Outstanding",43084,53320,"Oud Metha","Primary",KH,KT,GK),
+ ("Dubai College","British","Outstanding",97415,110305,"Al Sufouh First","Secondary",KH,KT,GK),
+ ("GEMS Jumeirah Primary School","British","Outstanding",44200,55714,"Jumeira Third (Jumeirah)","Primary",KH,KT,GK),
+ ("GEMS Wellington International School","British / IB","Outstanding",47527,103399,"Al Sufouh First","",KH,KT,GK),
+ ("Horizons English School","British","Outstanding",43849,58825,"Al Wasl","Primary",KH,KT,GK),
+ ("Jumeirah College","British","Outstanding",78496,98681,"Al Safa First","Secondary",KH,KT,GK),
+ ("Nord Anglia International School Dubai","British / IB","Outstanding",69625,105288,"Al Barsha Second","",KH,KT,GK),
+ ("Safa Community School","British / IB","Outstanding",54437,89440,"Al Barsha South First","",KH,KT,GK),
+ ("Victory Heights Primary School","British","Outstanding",40138,54733,"Dubai Sports City (Victory Heights)","Primary",KH,KT,GK),
+ ("Dubai British School Emirates Hills","British","Outstanding",53027,79541,"Emirates Hills","",KH,KT,GK),
+ ("Dubai British School Jumeirah Park","British","Outstanding",65719,111799,"Jumeirah Park","",KH,KT,GK),
+ ("GEMS Dubai American Academy","American","Outstanding",66185,93300,"Al Barsha South First","",KH,KT,GK),
+ ("GEMS Modern Academy","Indian (CBSE) / IB","Outstanding",38246,73876,"Nad Al Sheba First","",KH,KT,GK),
+ ("Lycée Français International Georges Pompidou","French","Outstanding",29488,62363,"Oud Metha","",KH,KT,GK),
  # ---- Very Good, current figures (Gulf News, August 2026) ----
  ("Delhi Private School","Indian (CBSE)","Very Good",11389,15842,"Jebel Ali First","KG1-Grade 12",GN26,GN26,""),
  ("The Winchester School","British","Very Good",14950,33352,"Jebel Ali First","FS1-Year 13",GN26,GN26,""),

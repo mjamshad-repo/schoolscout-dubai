@@ -9,7 +9,7 @@ Otherwise answer in Markdown, under 230 words plus the table:
 **Shortlist** - a table: School | Rating | Annual fee (AED) | Area | Why it fits. Cite each school with its record ID
 in brackets, e.g. [SCH008]. Put schools within budget first, then higher KHDA rating, then area match.
 Leave out records that clearly do not fit.
-**Watch-outs** - near misses (e.g. slightly over budget), areas marked as general knowledge, and any 2022 data caution.
+**Watch-outs** - near misses (e.g. slightly over budget), and any 2022 data caution.
 **Next step** - one practical action.
 
 Areas: the records have no distances or maps. Only say a school is in an area when its Area field names it.
