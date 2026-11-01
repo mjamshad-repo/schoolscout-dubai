@@ -1,0 +1,14 @@
+{
+  "name": "schoolscout-dubai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RAG assistant that shortlists Dubai private schools by budget, curriculum, KHDA rating and area.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:mock": "AI_PROVIDER=mock node scripts/dev.mjs",
+    "data": "python3 scripts/build-data.py",
+    "test": "node scripts/test.mjs"
+  }
+}

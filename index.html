@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SchoolScout Dubai</title>
+<meta name="description" content="Shortlist Dubai private schools by budget, curriculum, KHDA rating and area. Ask in plain words and get a cited answer.">
+<meta property="og:title" content="SchoolScout Dubai">
+<meta property="og:description" content="Find a Dubai school that fits your budget, with sources for every fee and rating.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<style>
+html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: report-card app — slim top bar, one working column per view; school records styled like KHDA report slips */
+:root{
+  --bg:#f5f7f9; --surface:#ffffff; --ink:#14233a; --muted:#5a6779; --line:#dde3ea;
+  --accent:#0b6e6e; --accent-ink:#ffffff; --accent-soft:#e2f1f0;
+  --r-out:#0d6b3f; --r-vg:#2f8f4e; --r-good:#2a62a8; --r-acc:#b07400; --warn-bg:#fff4dc; --warn-fg:#7a5200;
+  --font-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --font-body:"Source Sans 3",ui-sans-serif,system-ui,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1622; --surface:#16202e; --ink:#e6edf5; --muted:#9aa7b8; --line:#26334a;
+  --accent:#43b8b0; --accent-ink:#06201f; --accent-soft:#16312f;
+  --r-out:#4fc485; --r-vg:#7bd08f; --r-good:#7aa9ee; --r-acc:#e6b04a; --warn-bg:#3a2e12; --warn-fg:#f3cf7a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1622; --surface:#16202e; --ink:#e6edf5; --muted:#9aa7b8; --line:#26334a;
+  --accent:#43b8b0; --accent-ink:#06201f; --accent-soft:#16312f;
+  --r-out:#4fc485; --r-vg:#7bd08f; --r-good:#7aa9ee; --r-acc:#e6b04a; --warn-bg:#3a2e12; --warn-fg:#f3cf7a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--font-body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
+.brand{font:700 1.3rem/1 var(--font-display);letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px}
+.brand small{font:500 .7rem var(--font-data);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav a{color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:999px;font-weight:600;font-size:.95rem}
+nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+nav a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:28px 64px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:700;line-height:1.1}
+h2{font-size:1.35rem;font-weight:700}
+.lede{color:var(--muted);max-width:62ch;margin:8px 0 0}
+.label{font:500 .72rem var(--font-data);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+button,.btn{font:600 .95rem var(--font-body);border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 14px;cursor:pointer}
+.btn-primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.55;cursor:default}
+.chip{font:600 .85rem var(--font-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Ask view */
+.ask{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;margin-top:20px}
+@media (max-width:860px){.ask{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.thread{display:flex;flex-direction:column;gap:16px;padding:18px;min-height:280px}
+.msg{max-width:100%;min-width:0}
+.msg.user{align-self:flex-end;background:var(--accent);color:var(--accent-ink);padding:10px 14px;border-radius:14px 14px 4px 14px;max-width:85%}
+.msg.bot .body{min-width:0;overflow-wrap:anywhere}
+.msg.bot .body table{border-collapse:collapse;font-size:.92rem;width:100%}
+.msg.bot .body th,.msg.bot .body td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:normal;word-break:normal}
+.msg.bot .body td:nth-child(2){white-space:nowrap}
+.msg.bot .body th{font:500 .72rem var(--font-data);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.msg.bot .body h3,.msg.bot .body strong{font-family:var(--font-body)}
+.tablewrap{overflow-x:auto}
+.retrieved{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+.rid{font:500 .75rem var(--font-data);background:var(--accent-soft);color:var(--accent);padding:3px 8px;border-radius:6px;cursor:pointer;border:0}
+.thinking{color:var(--muted);font-style:italic}
+.composer{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.composer textarea{flex:1;min-width:0;resize:none;font:16px/1.4 var(--font-body);border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink)}
+.side{display:flex;flex-direction:column;gap:14px}
+.side .panel{padding:16px}
+.starters{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.pipeline{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:10px}
+.pipeline li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:.93rem}
+.pipeline b{font:500 .8rem var(--font-data);color:var(--accent)}
+.note{font-size:.88rem;color:var(--muted)}
+.err{color:var(--warn-fg);background:var(--warn-bg);padding:8px 12px;border-radius:8px;font-size:.92rem}
+
+/* Explore view */
+.filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px;padding:14px}
+@media (max-width:760px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.filters label{display:flex;flex-direction:column;gap:4px}
+.filters select,.filters input[type=search]{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.count{margin:16px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card.flash{outline:2px solid var(--accent)}
+.card h3{font-size:1.08rem;line-height:1.25}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{font:600 .78rem var(--font-body);padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+.rating{color:var(--surface);border:0}
+.rating.Outstanding{background:var(--r-out)} .rating.Very-Good{background:var(--r-vg)} .rating.Good{background:var(--r-good)} .rating.Acceptable{background:var(--r-acc)}
+.fee{font:500 1rem var(--font-data);font-variant-numeric:tabular-nums}
+.meta{font-size:.9rem;color:var(--muted)}
+.stale{font:600 .74rem var(--font-body);background:var(--warn-bg);color:var(--warn-fg);padding:3px 8px;border-radius:6px}
+.card .actions{margin-top:auto;display:flex;gap:8px;align-items:center}
+.card .actions label{display:flex;gap:6px;align-items:center;font-size:.9rem;cursor:pointer}
+.comparebar{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin-top:16px;display:flex;justify-content:center}
+.comparebar button{box-shadow:0 6px 20px rgb(0 0 0 / .18)}
+
+/* Compare */
+.cmp{overflow-x:auto;margin-top:18px}
+.cmp table{border-collapse:collapse;min-width:560px;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.cmp th,.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.cmp th[scope=row]{font:500 .74rem var(--font-data);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);width:130px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+
+/* About */
+.about{max-width:70ch;display:flex;flex-direction:column;gap:18px;margin-top:16px}
+.about p,.about li{color:var(--ink)}
+.about ul{margin:6px 0 0;padding-left:20px}
+footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);font-size:.85rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="brand">SchoolScout <small>Dubai</small></div>
+  <nav aria-label="Main">
+    <a href="#ask" data-view="ask">Ask</a>
+    <a href="#explore" data-view="explore">Explore</a>
+    <a href="#compare" data-view="compare">Compare <span id="cmpCount"></span></a>
+    <a href="#about" data-view="about">About &amp; sources</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <!-- ASK -->
+  <section id="view-ask">
+    <h1>Find a Dubai school that fits your budget</h1>
+    <p class="lede">Describe what you need in plain words. SchoolScout searches its school records, then writes a cited shortlist from those records only.</p>
+    <div class="ask">
+      <div class="panel" style="display:flex;flex-direction:column;min-width:0">
+        <div class="thread" id="thread" aria-live="polite"></div>
+        <form class="composer" id="composer">
+          <textarea id="q" rows="2" placeholder="e.g. CBSE school rated Very Good, under AED 20,000 a year, near Al Qusais" aria-label="Your question"></textarea>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn-primary" id="send" type="submit">Ask</button>
+            <button id="stop" type="button" hidden>Stop</button>
+          </div>
+        </form>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <div class="label">Try asking</div>
+          <div class="starters" id="starters"></div>
+        </div>
+        <div class="panel">
+          <div class="label">How an answer is made</div>
+          <ol class="pipeline">
+            <li><b>1</b><span><strong>Understand.</strong> Budget, curriculum, rating and area are read from your question.</span></li>
+            <li><b>2</b><span><strong>Retrieve.</strong> All <span class="nSchools">36</span> school records are scored against those needs; the best 6 are kept.</span></li>
+            <li><b>3</b><span><strong>Generate.</strong> The AI writes the shortlist using only the retrieved records, with record IDs as citations.</span></li>
+          </ol>
+          <p class="note" style="margin:10px 0 0">Answers are written by an AI model that sees only the retrieved records. Always confirm fees with the school.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- EXPLORE -->
+  <section id="view-explore" hidden>
+    <h1>Explore schools</h1>
+    <p class="lede">Every record in the pilot knowledge base. Filter, then tick up to three schools to compare.</p>
+    <div class="panel filters">
+      <label><span class="label">Curriculum</span>
+        <select id="fCur"><option value="">All</option><option>British</option><option>Indian (CBSE)</option><option>IB</option><option>American</option><option>French</option></select></label>
+      <label><span class="label">KHDA rating (min)</span>
+        <select id="fRat"><option value="0">Any</option><option value="3">Good or better</option><option value="4">Very Good or better</option><option value="5">Outstanding</option></select></label>
+      <label><span class="label">Lowest fee up to</span>
+        <select id="fFee"><option value="999999">Any</option><option value="15000">AED 15,000</option><option value="25000">AED 25,000</option><option value="45000">AED 45,000</option><option value="60000">AED 60,000</option></select></label>
+      <label><span class="label">Area or name</span><input id="fTxt" type="search" placeholder="e.g. Qusais"></label>
+    </div>
+    <p class="count label" id="count"></p>
+    <div class="grid" id="grid"></div>
+    <div class="comparebar" id="cmpBar" hidden><button class="btn-primary" id="goCmp" type="button"></button></div>
+  </section>
+
+  <!-- COMPARE -->
+  <section id="view-compare" hidden>
+    <h1>Compare schools</h1>
+    <p class="lede">Side by side, with the source and date behind every figure.</p>
+    <div class="row" style="margin-top:12px">
+      <button id="askCmp" class="btn-primary" type="button">Ask SchoolScout about these</button>
+      <button id="clearCmp" type="button">Clear selection</button>
+    </div>
+    <div class="cmp" id="cmp"></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="view-about" hidden>
+    <h1>About &amp; sources</h1>
+    <div class="about">
+      <p>SchoolScout is a retrieval-augmented assistant for parents shortlisting private schools in Dubai. Dubai has over 220 private schools across 17 curricula; fees, KHDA ratings and locations are spread across inspection reports and news lists. SchoolScout puts them in one place and answers questions with citations.</p>
+      <div>
+        <h2>Data in this pilot</h2>
+        <ul>
+          <li><strong>22 Outstanding schools:</strong> rating and 2026-27 fees from <a href="https://www.khaleejtimes.com/uae/schools-and-parents/dubai-school-fees-2026-27-tuition-costs-at-outstanding-schools-range" target="_blank" rel="noopener">Khaleej Times, 15 July 2026</a>. Fees are frozen for 2026-27.</li>
+          <li><strong>11 Very Good schools:</strong> rating and 2026-27 fees from <a href="https://gulfnews.com/living-in-uae/education/best-affordable-schools-dubai-khda-ratings-1.500631978" target="_blank" rel="noopener">Gulf News, 6 August 2026</a>.</li>
+          <li><strong>3 schools</strong> use <a href="https://gulfnews.com/parenting/learning-play/budget-friendly-schools-in-dubai-a-list-of-43-schools-which-have-average-fees-under-dh30000-and-khda-rating-good-or-above-1.1662474918579" target="_blank" rel="noopener">Gulf News, Sept 2022</a> figures and are marked <span class="stale">Fee data from 2022</span>.</li>
+          <li>Areas for the Outstanding schools are general knowledge and are noted as such in each record.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>KHDA ratings</h2>
+        <p>KHDA rates Dubai private schools on a six-point scale: Outstanding, Very Good, Good, Acceptable, Weak, Very Weak. For 2025-26 KHDA paused standard full inspections for most schools and kept existing ratings.</p>
+      </div>
+      <div>
+        <h2>Limits</h2>
+        <p>This is information, not admission advice. Always confirm fees and ratings on khda.gov.ae and with the school before applying.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap">SchoolScout · <span class="nSchools">36</span> schools · Information only. Confirm fees and ratings on khda.gov.ae and with the school.</div></footer>
+
+<script>
+let SCHOOLS = [];
+const RANK = {"Outstanding":5,"Very Good":4,"Good":3,"Acceptable":2,"Weak":1};
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const aed = n => "AED " + Number(n).toLocaleString("en-US");
+const isStale = s => !!s.stale;
+
+/* ---------- storage (per-viewer convenience) ---------- */
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+let selected = load("ss_cmp",[]);
+
+/* ---------- routing ---------- */
+const VIEWS=["ask","explore","compare","about"];
+function route(){
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "ask";
+  VIEWS.forEach(x=>{$("#view-"+x).hidden = x!==v});
+  document.querySelectorAll("nav a").forEach(a=>{ if(a.dataset.view===v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current") });
+  if(v==="compare") renderCompare();
+  window.scrollTo(0,0);
+}
+addEventListener("hashchange",route);
+
+/* ---------- explore ---------- */
+function card(s){
+  const on = selected.includes(s.id);
+  return `<article class="card" id="card-${s.id}">
+    <div class="row"><span class="label">${s.id}</span></div>
+    <h3>${esc(s.name)}</h3>
+    <div class="row"><span class="badge rating ${s.khda_rating.replace(" ","-")}">${s.khda_rating}</span><span class="badge">${esc(s.curriculum)}</span></div>
+    <div class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</div>
+    <div class="meta">${esc(s.area)} · ${esc(s.grades)}</div>
+    ${isStale(s)?'<div><span class="stale">Fee data from 2022, verify current fee</span></div>':''}
+    <div class="actions"><label><input type="checkbox" data-cmp="${s.id}" ${on?"checked":""}> Compare</label></div>
+  </article>`;
+}
+function renderExplore(){
+  const cur=$("#fCur").value, rat=+$("#fRat").value, fee=+$("#fFee").value, t=$("#fTxt").value.trim().toLowerCase();
+  const list=SCHOOLS.filter(s=>(!cur||s.curriculum.includes(cur)) && RANK[s.khda_rating]>=rat && s.fee_min_aed<=fee && (!t||(s.name+" "+s.area).toLowerCase().includes(t)));
+  $("#count").textContent=`${list.length} of ${SCHOOLS.length} schools`;
+  $("#grid").innerHTML=list.map(card).join("")||'<div class="empty">No school matches these filters. Try a higher fee or a lower rating.</div>';
+  renderCmpBar();
+}
+["#fCur","#fRat","#fFee","#fTxt"].forEach(id=>$(id).addEventListener("input",renderExplore));
+$("#grid").addEventListener("change",e=>{
+  const id=e.target.dataset.cmp; if(!id) return;
+  if(e.target.checked){ if(selected.length>=3){e.target.checked=false;return} selected.push(id) } else selected=selected.filter(x=>x!==id);
+  save("ss_cmp",selected); renderCmpBar();
+});
+function renderCmpBar(){
+  $("#cmpCount").textContent = selected.length?`(${selected.length})`:"";
+  $("#cmpBar").hidden = selected.length<2;
+  $("#goCmp").textContent = `Compare ${selected.length} schools`;
+}
+$("#goCmp").onclick=()=>location.hash="compare";
+
+/* ---------- compare ---------- */
+function renderCompare(){
+  const list=selected.map(id=>SCHOOLS.find(s=>s.id===id));
+  $("#askCmp").disabled = list.length<2;
+  if(list.length<2){$("#cmp").innerHTML='<div class="empty panel">Tick at least two schools on the Explore page to compare them.</div>';return}
+  const rows=[["KHDA rating",s=>`<span class="badge rating ${s.khda_rating.replace(" ","-")}">${s.khda_rating}</span>`],
+    ["Curriculum",s=>esc(s.curriculum)],["Lowest fee",s=>`<span class="fee">${aed(s.fee_min_aed)}</span>`],["Highest fee",s=>`<span class="fee">${aed(s.fee_max_aed)}</span>`],
+    ["Area",s=>esc(s.area)],["Grades",s=>esc(s.grades)],["Fee source",s=>esc(s.fee_source)+(isStale(s)?' <span class="stale">verify</span>':'')],["Rating source",s=>esc(s.rating_source)]];
+  $("#cmp").innerHTML=`<table><thead><tr><th scope="col"></th>${list.map(s=>`<th scope="col"><h3 style="font-size:1rem">${esc(s.name)}</h3><span class="label">${s.id}</span></th>`).join("")}</tr></thead>
+  <tbody>${rows.map(([k,f])=>`<tr><th scope="row">${k}</th>${list.map(s=>`<td>${f(s)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+$("#clearCmp").onclick=()=>{selected=[];save("ss_cmp",selected);renderCompare();renderExplore()};
+$("#askCmp").onclick=()=>{
+  const names=selected.map(id=>SCHOOLS.find(s=>s.id===id).name).join(" and ");
+  location.hash="ask"; ask(`Compare ${names}: fees, rating, curriculum, and which suits which family.`);
+};
+
+/* ---------- ask the server (retrieval + AI run on /api/ask) ---------- */
+let turns=[], ctl=null;
+function md(text){
+  const html=DOMPurify.sanitize(marked.parse(text));
+  return html.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
+             .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
+}
+function bubble(role,html){
+  const d=document.createElement("div"); d.className="msg "+role; d.innerHTML=html; $("#thread").append(d); d.scrollIntoView({block:"nearest"}); return d;
+}
+async function ask(q){
+  q=q.trim(); if(!q) return;
+  bubble("user",esc(q));
+  const bot=bubble("bot",`<div class="retrieved"></div><div class="body thinking">Searching records and writing a shortlist…</div>`);
+  const body=bot.querySelector(".body"), ret=bot.querySelector(".retrieved");
+  ctl=new AbortController(); $("#send").disabled=true; $("#stop").hidden=false;
+  try{
+    const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},signal:ctl.signal,
+      body:JSON.stringify({question:q,history:turns})});
+    const data=await r.json().catch(()=>({error:"The server sent an unreadable reply."}));
+    if(data.retrieved?.length) ret.innerHTML=`<span class="label">Retrieved</span>`+data.retrieved.map(id=>`<button class="rid" type="button" data-rid="${id}">${id}</button>`).join("");
+    body.classList.remove("thinking");
+    if(!r.ok) throw new Error(data.error||"Something went wrong. Ask again in a moment.");
+    body.innerHTML=md(data.answer);
+    turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
+    if(turns.length>8) turns=turns.slice(-8);
+  }catch(e){
+    body.classList.remove("thinking");
+    body.innerHTML = e.name==="AbortError" ? '<span class="note">Stopped.</span>' : `<div class="err">${esc(e.message)}</div>`;
+  }finally{ $("#send").disabled=false; $("#stop").hidden=true; }
+}
+$("#composer").addEventListener("submit",e=>{e.preventDefault();const q=$("#q").value;$("#q").value="";ask(q)});
+$("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#composer").requestSubmit()}});
+$("#stop").onclick=()=>ctl?.abort();
+document.addEventListener("click",e=>{
+  const id=e.target.closest?.("[data-rid]")?.dataset.rid; if(!id) return;
+  location.hash="explore"; $("#fCur").value="";$("#fRat").value="0";$("#fFee").value="999999";$("#fTxt").value=""; renderExplore();
+  setTimeout(()=>{const c=$("#card-"+id); if(c){c.scrollIntoView({block:"center"});c.classList.add("flash");setTimeout(()=>c.classList.remove("flash"),1600)}},50);
+});
+
+const STARTERS=["CBSE school rated Very Good or better, under AED 20,000 a year",
+ "Outstanding British primary school near Dubai Sports City, budget up to AED 55,000",
+ "Affordable British school in Jebel Ali",
+ "I need a school for my daughter"];
+$("#starters").innerHTML=STARTERS.map(s=>`<button class="chip" type="button">${esc(s)}</button>`).join("");
+$("#starters").addEventListener("click",e=>{if(e.target.matches(".chip")) ask(e.target.textContent)});
+
+/* opening state: show what a retrieval looks like before any question */
+route();
+fetch("/schools.json").then(r=>r.json()).then(d=>{
+  SCHOOLS=d; selected=selected.filter(id=>SCHOOLS.some(s=>s.id===id));
+  document.querySelectorAll(".nSchools").forEach(e=>e.textContent=SCHOOLS.length);
+  bubble("bot",`<div class="body"><p><strong>Hi, I'm SchoolScout.</strong> I know ${SCHOOLS.length} Dubai private schools with KHDA ratings and fees. Tell me your budget, curriculum, your child's grade and the area you live in, or pick a question on the right.</p></div>`);
+  renderExplore(); route();
+}).catch(()=>bubble("bot",'<div class="body err">Could not load the school list. Refresh the page.</div>'));
+</script>
+</body>
+</html>
