@@ -47,7 +47,7 @@ Node 18 or newer. No `npm install` needed.
 
 `scripts/build-data.py` reads the newest `data/khda_register_*.xlsx` and merges the `FEES` table (keyed by exact KHDA name). Run `npm run data` (needs `pip install openpyxl`), then `npm run web`, which builds `index.html` (website) and `dist/artifact.html` (Claude artifact) from `web/app.src.html`.
 
-To cover all ~227 Dubai private schools, request KHDA's open dataset on Dubai Pulse (`khda_dubai_private_schools-open`; access is granted within about 14 days) and load its CSV in `build-data.py`. Above a few hundred records, swap the keyword retrieval for embeddings.
+To refresh, export a newer KHDA register into `data/` and add fees to `FEES` as they are published. Above a few thousand records, swap the keyword retrieval for embeddings.
 
 ## Files
 

@@ -28,16 +28,34 @@ export class ProviderError extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
 }
 
+const BUSY = "The AI service is busy right now (free-tier demand). Wait a minute and ask again; Explore and Compare still work.";
+
 async function post(url, headers, body) {
   const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
   const data = await r.json().catch(() => ({}));
-  if (r.status === 429) throw new ProviderError("The AI service is busy (free-tier limit reached). Try again in a minute.", 429);
+  if (r.status === 429 || r.status === 503 || r.status === 500) {
+    const e = new ProviderError(BUSY, 503); e.retryable = true; throw e;
+  }
   if (!r.ok) throw new ProviderError(`AI provider error ${r.status}: ${data?.error?.message || "unknown"}`, 502);
   return data;
 }
 
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Free-tier models are sometimes overloaded: try the main model twice, then a lighter fallback model once.
 async function gemini(system, turns) {
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const main = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const fallback = env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
+  const attempts = [main, main, ...(fallback && fallback !== main ? [fallback] : [])];
+  let last;
+  for (const [i, model] of attempts.entries()) {
+    try { return await geminiOnce(model, system, turns); }
+    catch (e) { last = e; if (!e.retryable) throw e; if (i < attempts.length - 1) await sleep(i === 0 ? 1200 : 400); }
+  }
+  throw last;
+}
+
+async function geminiOnce(model, system, turns) {
   const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     { "x-goog-api-key": env.GEMINI_API_KEY },
     {
