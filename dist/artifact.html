@@ -153,7 +153,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .stats{list-style:none;padding:0;margin:18px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 @media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .stats li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
-.stats strong{font:700 1.25rem var(--font-display);font-variant-numeric:tabular-nums}
+.stats strong{font:700 clamp(1rem,2.2vw,1.25rem) var(--font-display);font-variant-numeric:tabular-nums;white-space:nowrap}
 .stats span{font-size:.8rem;color:var(--muted)}
 .msg.bot{display:flex;gap:10px;align-items:flex-start}
 .bot-col{min-width:0;flex:1}
