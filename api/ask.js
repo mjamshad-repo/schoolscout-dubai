@@ -35,13 +35,14 @@ export default async function handler(req, res) {
   while (history.length && history[0].role !== "user") history.shift();
 
   const previousQuestions = history.filter(t => t.role === "user").map(t => t.content);
-  const { hits } = retrieve(SCHOOLS, question, previousQuestions);
-  const records = hits.map(h => recordText(h.s)).join("\n\n");
+  const { hits, needs } = retrieve(SCHOOLS, question, previousQuestions);
+  const placeLabel = needs.place?.label || "";
+  const records = hits.map(h => recordText(h.s, h.km, placeLabel)).join("\n\n");
   const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\nRETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
 
   try {
     const answer = await complete(RULES, turns);
-    res.status(200).json({ answer, retrieved: hits.map(h => h.s.id), provider: providerName() });
+    res.status(200).json({ answer, retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, provider: providerName() });
   } catch (e) {
     const status = e instanceof ProviderError ? e.status : 500;
     console.error("ask failed:", e.message);

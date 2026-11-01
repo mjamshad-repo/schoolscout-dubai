@@ -1,0 +1,15 @@
+/* Additions for the full KHDA register: links row, distance, unknown fees, paging */
+.rating.Not-yet-inspected,.rating.Not-inspected-COVID-19{background:var(--muted)}
+.rating.Weak,.rating.Very-Weak{background:var(--warn-fg)}
+.fee.unknown{font:600 .9rem var(--font-body);color:var(--muted)}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.9rem}
+.links a{color:var(--accent);text-decoration:none;font-weight:600}
+.links a:hover{text-decoration:underline}
+.links .tel{font:500 .85rem var(--font-data);color:var(--muted);user-select:all}
+.dist{font:500 .8rem var(--font-data);color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:6px}
+.filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.filters .check{flex-direction:row;align-items:center;gap:8px;font-size:.92rem}
+.more{display:flex;justify-content:center;margin-top:18px}
+.placeinfo{font:500 .78rem var(--font-data);color:var(--muted);margin:-4px 0 8px}
+.cmp td a{color:var(--accent);font-weight:600;text-decoration:none}

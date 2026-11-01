@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SchoolScout Dubai</title>
-<meta name="description" content="Shortlist Dubai private schools by budget, curriculum, KHDA rating and area. Ask in plain words and get a cited answer.">
 <meta property="og:title" content="SchoolScout Dubai">
-<meta property="og:description" content="Find a Dubai school that fits your budget, with sources for every fee and rating.">
+<meta property="og:description" content="Find a Dubai school that fits your family, with sources for every fee and rating.">
+<title>SchoolScout Dubai</title>
+<meta name="description" content="Shortlist Dubai private schools by budget, curriculum, KHDA rating and distance. Ask in plain words and get a cited answer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
@@ -14,6 +14,7 @@
 <style>
 html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+
 /* Layout: report-card app — slim top bar, one working column per view; school records styled like KHDA report slips */
 :root{
   --bg:#f5f7f9; --surface:#ffffff; --ink:#14233a; --muted:#5a6779; --line:#dde3ea;
@@ -118,10 +119,24 @@ button:disabled{opacity:.55;cursor:default}
 .about ul{margin:6px 0 0;padding-left:20px}
 footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);font-size:.85rem}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Additions for the full KHDA register: links row, distance, unknown fees, paging */
+.rating.Not-yet-inspected,.rating.Not-inspected-COVID-19{background:var(--muted)}
+.rating.Weak,.rating.Very-Weak{background:var(--warn-fg)}
+.fee.unknown{font:600 .9rem var(--font-body);color:var(--muted)}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.9rem}
+.links a{color:var(--accent);text-decoration:none;font-weight:600}
+.links a:hover{text-decoration:underline}
+.links .tel{font:500 .85rem var(--font-data);color:var(--muted);user-select:all}
+.dist{font:500 .8rem var(--font-data);color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:6px}
+.filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.filters .check{flex-direction:row;align-items:center;gap:8px;font-size:.92rem}
+.more{display:flex;justify-content:center;margin-top:18px}
+.placeinfo{font:500 .78rem var(--font-data);color:var(--muted);margin:-4px 0 8px}
+.cmp td a{color:var(--accent);font-weight:600;text-decoration:none}
 </style>
 </head>
 <body>
-
 <header><div class="wrap">
   <div class="brand">SchoolScout <small>Dubai</small></div>
   <nav aria-label="Main">
@@ -135,13 +150,13 @@ footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);fo
 <main class="wrap">
   <!-- ASK -->
   <section id="view-ask">
-    <h1>Find a Dubai school that fits your budget</h1>
-    <p class="lede">Describe what you need in plain words. SchoolScout searches its school records, then writes a cited shortlist from those records only.</p>
+    <h1>Find a Dubai school that fits your family</h1>
+    <p class="lede">Ask in plain words: budget, curriculum, grade and where you live. SchoolScout searches all <span class="nSchools">236</span> KHDA-registered private schools and writes a cited shortlist.</p>
     <div class="ask">
       <div class="panel" style="display:flex;flex-direction:column;min-width:0">
         <div class="thread" id="thread" aria-live="polite"></div>
         <form class="composer" id="composer">
-          <textarea id="q" rows="2" placeholder="e.g. CBSE school rated Very Good, under AED 20,000 a year, near Al Qusais" aria-label="Your question"></textarea>
+          <textarea id="q" rows="2" placeholder="e.g. CBSE school near Dubai Sports City, under AED 20,000, for KG1" aria-label="Your question"></textarea>
           <div style="display:flex;flex-direction:column;gap:6px">
             <button class="btn-primary" id="send" type="submit">Ask</button>
             <button id="stop" type="button" hidden>Stop</button>
@@ -156,11 +171,11 @@ footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);fo
         <div class="panel">
           <div class="label">How an answer is made</div>
           <ol class="pipeline">
-            <li><b>1</b><span><strong>Understand.</strong> Budget, curriculum, rating and area are read from your question.</span></li>
-            <li><b>2</b><span><strong>Retrieve.</strong> All <span class="nSchools">36</span> school records are scored against those needs; the best 6 are kept.</span></li>
-            <li><b>3</b><span><strong>Generate.</strong> The AI writes the shortlist using only the retrieved records, with record IDs as citations.</span></li>
+            <li><b>1</b><span><strong>Understand.</strong> Budget, curriculum, rating and place are read from your question and the two before it.</span></li>
+            <li><b>2</b><span><strong>Retrieve.</strong> All <span class="nSchools">236</span> KHDA records are scored, including straight-line distance from the place you name; the best 10 are kept.</span></li>
+            <li><b>3</b><span><strong>Generate.</strong> The AI writes the shortlist from those 10 records only, citing each one.</span></li>
           </ol>
-          <p class="note" style="margin:10px 0 0">Answers are written by an AI model that sees only the retrieved records. Always confirm fees with the school.</p>
+          <p class="note" style="margin:10px 0 0" id="aiNote"></p>
         </div>
       </aside>
     </div>
@@ -169,25 +184,27 @@ footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);fo
   <!-- EXPLORE -->
   <section id="view-explore" hidden>
     <h1>Explore schools</h1>
-    <p class="lede">Every record in the pilot knowledge base. Filter, then tick up to three schools to compare.</p>
+    <p class="lede">Every KHDA-registered private school in Dubai. Filter, sort by distance, and tick up to three to compare.</p>
     <div class="panel filters">
-      <label><span class="label">Curriculum</span>
-        <select id="fCur"><option value="">All</option><option>British</option><option>Indian (CBSE)</option><option>IB</option><option>American</option><option>French</option></select></label>
+      <label><span class="label">Curriculum</span><select id="fCur"><option value="">All</option></select></label>
       <label><span class="label">KHDA rating (min)</span>
         <select id="fRat"><option value="0">Any</option><option value="3">Good or better</option><option value="4">Very Good or better</option><option value="5">Outstanding</option></select></label>
+      <label><span class="label">Near</span><select id="fNear"><option value="">Anywhere</option></select></label>
       <label><span class="label">Lowest fee up to</span>
-        <select id="fFee"><option value="999999">Any</option><option value="15000">AED 15,000</option><option value="25000">AED 25,000</option><option value="45000">AED 45,000</option><option value="60000">AED 60,000</option></select></label>
-      <label><span class="label">Area or name</span><input id="fTxt" type="search" placeholder="e.g. Qusais"></label>
+        <select id="fFee"><option value="">Any (incl. fee not on file)</option><option value="15000">AED 15,000</option><option value="25000">AED 25,000</option><option value="45000">AED 45,000</option><option value="60000">AED 60,000</option><option value="120000">Any, fee on file only</option></select></label>
+      <label><span class="label">Name or area</span><input id="fTxt" type="search" placeholder="e.g. Qusais, GEMS"></label>
+      <label class="check"><input id="fNew" type="checkbox"> Include schools not yet inspected</label>
     </div>
     <p class="count label" id="count"></p>
     <div class="grid" id="grid"></div>
+    <div class="more"><button id="moreBtn" type="button" hidden>Show more</button></div>
     <div class="comparebar" id="cmpBar" hidden><button class="btn-primary" id="goCmp" type="button"></button></div>
   </section>
 
   <!-- COMPARE -->
   <section id="view-compare" hidden>
     <h1>Compare schools</h1>
-    <p class="lede">Side by side, with the source and date behind every figure.</p>
+    <p class="lede">Side by side, with the source behind every figure.</p>
     <div class="row" style="margin-top:12px">
       <button id="askCmp" class="btn-primary" type="button">Ask SchoolScout about these</button>
       <button id="clearCmp" type="button">Clear selection</button>
@@ -199,41 +216,44 @@ footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);fo
   <section id="view-about" hidden>
     <h1>About &amp; sources</h1>
     <div class="about">
-      <p>SchoolScout is a retrieval-augmented assistant for parents shortlisting private schools in Dubai. Dubai has over 220 private schools across 17 curricula; fees, KHDA ratings and locations are spread across inspection reports and news lists. SchoolScout puts them in one place and answers questions with citations.</p>
+      <p>SchoolScout is a retrieval-augmented assistant for parents choosing a private school in Dubai. It puts KHDA's official school register, published fees and distance search in one place, and answers questions with citations.</p>
       <div>
-        <h2>Data in this pilot</h2>
+        <h2>Data</h2>
         <ul>
-          <li><strong>22 Outstanding schools:</strong> rating and 2026-27 fees from <a href="https://www.khaleejtimes.com/uae/schools-and-parents/dubai-school-fees-2026-27-tuition-costs-at-outstanding-schools-range" target="_blank" rel="noopener">Khaleej Times, 15 July 2026</a>. Fees are frozen for 2026-27.</li>
-          <li><strong>11 Very Good schools:</strong> rating and 2026-27 fees from <a href="https://gulfnews.com/living-in-uae/education/best-affordable-schools-dubai-khda-ratings-1.500631978" target="_blank" rel="noopener">Gulf News, 6 August 2026</a>.</li>
-          <li><strong>3 schools</strong> use <a href="https://gulfnews.com/parenting/learning-play/budget-friendly-schools-in-dubai-a-list-of-43-schools-which-have-average-fees-under-dh30000-and-khda-rating-good-or-above-1.1662474918579" target="_blank" rel="noopener">Gulf News, Sept 2022</a> figures and are marked <span class="stale">Fee data from 2022</span>.</li>
-          <li>Areas and ratings for the Outstanding schools are checked against the <a href="https://web.khda.gov.ae/en/Education-Directory/schools" target="_blank" rel="noopener">KHDA Education Directory</a> (28 October 2026).</li>
+          <li><strong>All <span class="nSchools">236</span> schools:</strong> name, curriculum, overall KHDA rating with inspection year, area, map location, phone, website and inspection report link, from KHDA's private schools register (exported <span id="regDate">25 Oct 2026</span>).</li>
+          <li><strong>Fees for <span id="nFees">35</span> schools:</strong> 2026-27 fees for the 22 Outstanding schools (Khaleej Times, 15 July 2026) and 11 Very Good schools (Gulf News, 6 August 2026); 2 schools use 2022 figures and are marked <span class="stale">Fee data from 2022</span>.</li>
+          <li><strong>Other schools</strong> show "Fee not on file". KHDA publishes each school's fees on its <a href="https://web.khda.gov.ae/en/Education-Directory/schools" target="_blank" rel="noopener">Education Directory</a>; check there or with the school.</li>
+          <li><strong>Distances</strong> are straight lines between KHDA map points, rounded to about a kilometre. Driving distance is longer.</li>
         </ul>
       </div>
       <div>
         <h2>KHDA ratings</h2>
-        <p>KHDA rates Dubai private schools on a six-point scale: Outstanding, Very Good, Good, Acceptable, Weak, Very Weak. For 2025-26 KHDA paused standard full inspections for most schools and kept existing ratings.</p>
+        <p>KHDA rates Dubai private schools on a six-point scale: Outstanding, Very Good, Good, Acceptable, Weak, Very Weak. "Not yet inspected" usually means a school is new. Ratings show the year of the inspection they come from.</p>
       </div>
       <div>
         <h2>Limits</h2>
-        <p>This is information, not admission advice. Always confirm fees and ratings on khda.gov.ae and with the school before applying.</p>
+        <p>Information only, not admission advice. Always confirm fees, seats and ratings with the school and on khda.gov.ae before applying.</p>
       </div>
     </div>
   </section>
 </main>
-<footer><div class="wrap">SchoolScout · <span class="nSchools">36</span> schools · Information only. Confirm fees and ratings on khda.gov.ae and with the school.</div></footer>
+<footer><div class="wrap">SchoolScout · <span class="nSchools">236</span> KHDA-registered schools · Information only. Confirm fees and ratings on khda.gov.ae and with the school.</div></footer>
 
 <script>
+/* MODE is "web" (server answers at /api/ask) or "artifact" (retrieval + Claude run in the page). Set by scripts/build-web.py. */
+const MODE = "web";
 let SCHOOLS = [];
-const RANK = {"Outstanding":5,"Very Good":4,"Good":3,"Acceptable":2,"Weak":1};
-const $ = s => document.querySelector(s);
-const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const aed = n => "AED " + Number(n).toLocaleString("en-US");
-const isStale = s => !!s.stale;
 
-/* ---------- storage (per-viewer convenience) ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const aed = n => "AED " + Number(n).toLocaleString("en-US");
+const RATE = {"Outstanding":5,"Very Good":4,"Good":3,"Acceptable":2,"Weak":1,"Very Weak":0};
+const rcls = r => String(r).replace(/[^A-Za-z0-9]+/g,"-").replace(/-$/,"");
+const byId = id => SCHOOLS.find(s=>s.id===id);
+
 function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
-let selected = load("ss_cmp",[]);
+let selected = load("ss_cmp2",[]);
 
 /* ---------- routing ---------- */
 const VIEWS=["ask","explore","compare","about"];
@@ -246,31 +266,69 @@ function route(){
 }
 addEventListener("hashchange",route);
 
-/* ---------- explore ---------- */
-function card(s){
+/* ---------- places (area centres from KHDA map points) ---------- */
+let PLACE_LIST=[];
+function buildPlaces(){
+  const acc={};
+  for(const s of SCHOOLS){ if(typeof s.lat!=="number") continue;
+    const label=s.area.replace(/\s*\(.*\)$/,"").replace(/\s+(First|Second|Third|Fourth|Fifth|\d+)$/,"");
+    (acc[label] ||= {lat:0,lng:0,n:0}); acc[label].lat+=s.lat; acc[label].lng+=s.lng; acc[label].n++; }
+  PLACE_LIST=Object.entries(acc).map(([label,v])=>({label,lat:v.lat/v.n,lng:v.lng/v.n})).sort((a,b)=>a.label.localeCompare(b.label));
+}
+function kmBetween(a,b){const R=6371,r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
+  const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+
+/* ---------- cards ---------- */
+function links(s){
+  const out=[];
+  if(s.website) out.push(`<a href="${esc(s.website)}" target="_blank" rel="noopener">Website</a>`);
+  if(typeof s.lat==="number") out.push(`<a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}" target="_blank" rel="noopener">Map</a>`);
+  if(s.inspection_report) out.push(`<a href="${esc(s.inspection_report)}" target="_blank" rel="noopener">KHDA report</a>`);
+  if(s.phone) out.push(`<span class="tel" title="Phone">${esc(s.phone)}</span>`);
+  return `<div class="links">${out.join("")}</div>`;
+}
+function feeHtml(s){ return s.fee_min_aed!=null ? `<div class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</div>` : `<div class="fee unknown">Fee not on file</div>`; }
+function card(s, d){
   const on = selected.includes(s.id);
   return `<article class="card" id="card-${s.id}">
-    <div class="row"><span class="label">${s.id}</span></div>
+    <div class="row" style="justify-content:space-between"><span class="label">${s.id}${s.established?` · est. ${s.established}`:""}</span>${d!=null?`<span class="dist">${d.toFixed(1)} km</span>`:""}</div>
     <h3>${esc(s.name)}</h3>
-    <div class="row"><span class="badge rating ${s.khda_rating.replace(" ","-")}">${s.khda_rating}</span><span class="badge">${esc(s.curriculum)}</span></div>
-    <div class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</div>
-    <div class="meta">${esc(s.area)} · ${esc(s.grades)}</div>
-    ${isStale(s)?'<div><span class="stale">Fee data from 2022, verify current fee</span></div>':''}
+    <div class="row"><span class="badge rating ${rcls(s.khda_rating)}">${esc(s.khda_rating)}${s.rating_year?` · ${esc(s.rating_year.slice(0,4))}-${esc(s.rating_year.slice(-2))}`:""}</span><span class="badge">${esc(s.curriculum)}</span></div>
+    ${feeHtml(s)}
+    <div class="meta">${esc(s.area)}${s.grades && s.grades!=="Not in source"?` · ${esc(s.grades)}`:""}</div>
+    ${s.stale?'<div><span class="stale">Fee data from 2022, verify current fee</span></div>':''}
+    ${links(s)}
     <div class="actions"><label><input type="checkbox" data-cmp="${s.id}" ${on?"checked":""}> Compare</label></div>
   </article>`;
 }
-function renderExplore(){
-  const cur=$("#fCur").value, rat=+$("#fRat").value, fee=+$("#fFee").value, t=$("#fTxt").value.trim().toLowerCase();
-  const list=SCHOOLS.filter(s=>(!cur||s.curriculum.includes(cur)) && RANK[s.khda_rating]>=rat && s.fee_min_aed<=fee && (!t||(s.name+" "+s.area).toLowerCase().includes(t)));
-  $("#count").textContent=`${list.length} of ${SCHOOLS.length} schools`;
-  $("#grid").innerHTML=list.map(card).join("")||'<div class="empty">No school matches these filters. Try a higher fee or a lower rating.</div>';
+
+/* ---------- explore ---------- */
+let shown=30, lastList=[];
+function renderExplore(reset=true){
+  if(reset) shown=30;
+  const cur=$("#fCur").value, rat=+$("#fRat").value, fee=$("#fFee").value, t=$("#fTxt").value.trim().toLowerCase(), incNew=$("#fNew").checked;
+  const near=PLACE_LIST.find(p=>p.label===$("#fNear").value);
+  let list=SCHOOLS.filter(s=>
+    (!cur||s.curriculum.split(" / ").includes(cur)) &&
+    (rat===0 || (RATE[s.khda_rating]??-1)>=rat) && (incNew || !/^Not/.test(s.khda_rating)) &&
+    (!fee || (s.fee_min_aed!=null && s.fee_min_aed<=+fee)) &&
+    (!t || (s.name+" "+s.area).toLowerCase().includes(t)));
+  let withD=list.map(s=>({s,d: near && typeof s.lat==="number" ? kmBetween(near,s) : null}));
+  if(near) withD.sort((a,b)=>(a.d??1e9)-(b.d??1e9));
+  else withD.sort((a,b)=>(RATE[b.s.khda_rating]??-1)-(RATE[a.s.khda_rating]??-1) || (b.s.fee_min_aed!=null)-(a.s.fee_min_aed!=null) || a.s.name.localeCompare(b.s.name));
+  lastList=withD;
+  $("#count").textContent=`${list.length} of ${SCHOOLS.length} schools${near?` · sorted by distance from ${near.label}`:""}`;
+  $("#grid").innerHTML=withD.slice(0,shown).map(x=>card(x.s,x.d)).join("")||'<div class="empty">No school matches these filters. Try a lower rating, a higher fee, or include schools not yet inspected.</div>';
+  $("#moreBtn").hidden = withD.length<=shown;
+  $("#moreBtn").textContent=`Show more (${withD.length-shown} left)`;
   renderCmpBar();
 }
-["#fCur","#fRat","#fFee","#fTxt"].forEach(id=>$(id).addEventListener("input",renderExplore));
+["#fCur","#fRat","#fFee","#fTxt","#fNear","#fNew"].forEach(id=>$(id).addEventListener("input",()=>renderExplore()));
+$("#moreBtn").onclick=()=>{shown+=30; renderExplore(false)};
 $("#grid").addEventListener("change",e=>{
   const id=e.target.dataset.cmp; if(!id) return;
   if(e.target.checked){ if(selected.length>=3){e.target.checked=false;return} selected.push(id) } else selected=selected.filter(x=>x!==id);
-  save("ss_cmp",selected); renderCmpBar();
+  save("ss_cmp2",selected); renderCmpBar();
 });
 function renderCmpBar(){
   $("#cmpCount").textContent = selected.length?`(${selected.length})`:"";
@@ -281,50 +339,77 @@ $("#goCmp").onclick=()=>location.hash="compare";
 
 /* ---------- compare ---------- */
 function renderCompare(){
-  const list=selected.map(id=>SCHOOLS.find(s=>s.id===id));
+  const list=selected.map(byId).filter(Boolean);
   $("#askCmp").disabled = list.length<2;
   if(list.length<2){$("#cmp").innerHTML='<div class="empty panel">Tick at least two schools on the Explore page to compare them.</div>';return}
-  const rows=[["KHDA rating",s=>`<span class="badge rating ${s.khda_rating.replace(" ","-")}">${s.khda_rating}</span>`],
-    ["Curriculum",s=>esc(s.curriculum)],["Lowest fee",s=>`<span class="fee">${aed(s.fee_min_aed)}</span>`],["Highest fee",s=>`<span class="fee">${aed(s.fee_max_aed)}</span>`],
-    ["Area",s=>esc(s.area)],["Grades",s=>esc(s.grades)],["Fee source",s=>esc(s.fee_source)+(isStale(s)?' <span class="stale">verify</span>':'')],["Rating source",s=>esc(s.rating_source)]];
+  const L=(href,t)=>href?`<a href="${esc(href)}" target="_blank" rel="noopener">${t}</a>`:"Not listed";
+  const rows=[["KHDA rating",s=>`<span class="badge rating ${rcls(s.khda_rating)}">${esc(s.khda_rating)}</span>`],
+    ["Inspection",s=>esc(s.rating_year||"None yet")],["Curriculum",s=>esc(s.curriculum)],
+    ["Lowest fee",s=>s.fee_min_aed!=null?`<span class="fee">${aed(s.fee_min_aed)}</span>`:"Not on file"],
+    ["Highest fee",s=>s.fee_max_aed!=null?`<span class="fee">${aed(s.fee_max_aed)}</span>`:"Not on file"],
+    ["Area",s=>esc(s.area)],["Grades",s=>esc(s.grades)],["Established",s=>esc(s.established||"Not listed")],
+    ["Phone",s=>esc(s.phone||"Not listed")],["Website",s=>L(s.website,"Open")],
+    ["Map",s=>typeof s.lat==="number"?L(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`,"Open"):"Not listed"],
+    ["KHDA report",s=>L(s.inspection_report,"Open")],
+    ["Fee source",s=>esc(s.fee_source||"—")+(s.stale?' <span class="stale">verify</span>':'')],["Rating source",s=>esc(s.rating_source)]];
   $("#cmp").innerHTML=`<table><thead><tr><th scope="col"></th>${list.map(s=>`<th scope="col"><h3 style="font-size:1rem">${esc(s.name)}</h3><span class="label">${s.id}</span></th>`).join("")}</tr></thead>
   <tbody>${rows.map(([k,f])=>`<tr><th scope="row">${k}</th>${list.map(s=>`<td>${f(s)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
-$("#clearCmp").onclick=()=>{selected=[];save("ss_cmp",selected);renderCompare();renderExplore()};
+$("#clearCmp").onclick=()=>{selected=[];save("ss_cmp2",selected);renderCompare();renderExplore()};
 $("#askCmp").onclick=()=>{
-  const names=selected.map(id=>SCHOOLS.find(s=>s.id===id).name).join(" and ");
-  location.hash="ask"; ask(`Compare ${names}: fees, rating, curriculum, and which suits which family.`);
+  const names=selected.map(id=>byId(id)?.name).filter(Boolean).join(" and ");
+  location.hash="ask"; ask(`Compare ${names}: fees, rating, curriculum, location, and which suits which family.`);
 };
 
-/* ---------- ask the server (retrieval + AI run on /api/ask) ---------- */
-let turns=[], ctl=null;
+/* ---------- chat ---------- */
+let turns=[], ctl=null, sampleFn=null;
 function md(text){
   const html=DOMPurify.sanitize(marked.parse(text));
   return html.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
              .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
 }
-function bubble(role,html){
-  const d=document.createElement("div"); d.className="msg "+role; d.innerHTML=html; $("#thread").append(d); d.scrollIntoView({block:"nearest"}); return d;
+function bubble(role,html){ const d=document.createElement("div"); d.className="msg "+role; d.innerHTML=html; $("#thread").append(d); d.scrollIntoView({block:"nearest"}); return d; }
+const SAMPLE_ERR={not_granted:"Claude isn't allowed for this page. Allow it from the page's permissions to get answers; Explore and Compare still work.",
+  sampling_disabled:"Claude isn't available for this account. Explore and Compare still work.",
+  rate_limited:"Too many questions in a short time. Wait a minute, then ask again.",
+  session_expired:"Your session has expired. Sign in again, then ask.", refused:"The AI couldn't answer that. Try rephrasing the question."};
+
+async function answerWeb(q, signal, onText){
+  const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},signal,body:JSON.stringify({question:q,history:turns})});
+  const data=await r.json().catch(()=>({error:"The server sent an unreadable reply."}));
+  if(!r.ok) { const e=new Error(data.error||"Something went wrong. Ask again in a moment."); e.retrieved=data.retrieved; throw e; }
+  return data;
 }
+async function answerArtifact(q, signal, onText){
+  if(!sampleFn) throw new Error("AI answers need this page open inside Claude. Explore and Compare still work.");
+  const prev=turns.filter(t=>t.role==="user").map(t=>t.content);
+  const {hits,needs}=retrieve(SCHOOLS,q,prev);
+  onText(null,{retrieved:hits.map(h=>h.s.id),place:needs.place?.label});
+  const records=hits.map(h=>recordText(h.s,h.km,needs.place?.label||"")).join("\n\n");
+  const msgs=[{role:"user",content:RULES},...turns,{role:"user",content:`QUESTION: ${q}\n\nRETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}`}];
+  try{
+    const {text}=await sampleFn(msgs,{cache:false,signal,onText:({text})=>onText(text)});
+    return {answer:text,retrieved:hits.map(h=>h.s.id),place:needs.place?.label};
+  }catch(e){ const err=new Error(e.code==="cancelled"?"Stopped.":(SAMPLE_ERR[e.code]||"Something went wrong reaching Claude. Ask again in a moment.")); err.code=e.code; err.partial=e.text; if(["not_granted","sampling_disabled"].includes(e.code)) sampleFn=null; throw err; }
+}
+
 async function ask(q){
   q=q.trim(); if(!q) return;
   bubble("user",esc(q));
-  const bot=bubble("bot",`<div class="retrieved"></div><div class="body thinking">Searching records and writing a shortlist…</div>`);
-  const body=bot.querySelector(".body"), ret=bot.querySelector(".retrieved");
+  const bot=bubble("bot",`<div class="retrieved"></div><div class="placeinfo"></div><div class="body thinking">Searching ${SCHOOLS.length} schools and writing a shortlist…</div>`);
+  const body=bot.querySelector(".body"), ret=bot.querySelector(".retrieved"), pinfo=bot.querySelector(".placeinfo");
+  const showMeta=(ids,place)=>{ if(ids?.length) ret.innerHTML=`<span class="label">Retrieved</span>`+ids.map(id=>`<button class="rid" type="button" data-rid="${id}">${id}</button>`).join(""); pinfo.textContent=place?`Distances measured from ${place} (straight line)`:""; };
   ctl=new AbortController(); $("#send").disabled=true; $("#stop").hidden=false;
   try{
-    const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},signal:ctl.signal,
-      body:JSON.stringify({question:q,history:turns})});
-    const data=await r.json().catch(()=>({error:"The server sent an unreadable reply."}));
-    if(data.retrieved?.length) ret.innerHTML=`<span class="label">Retrieved</span>`+data.retrieved.map(id=>`<button class="rid" type="button" data-rid="${id}">${id}</button>`).join("");
-    body.classList.remove("thinking");
-    if(!r.ok) throw new Error(data.error||"Something went wrong. Ask again in a moment.");
-    body.innerHTML=md(data.answer);
+    const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
+    showMeta(data.retrieved,data.place);
+    body.classList.remove("thinking"); body.innerHTML=md(data.answer);
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
   }catch(e){
     body.classList.remove("thinking");
-    body.innerHTML = e.name==="AbortError" ? '<span class="note">Stopped.</span>' : `<div class="err">${esc(e.message)}</div>`;
+    if(e.retrieved) showMeta(e.retrieved);
+    body.innerHTML=(e.partial?md(e.partial):"") + (e.name==="AbortError"||e.code==="cancelled" ? '<span class="note">Stopped.</span>' : `<div class="err">${esc(e.message)}</div>`);
   }finally{ $("#send").disabled=false; $("#stop").hidden=true; }
 }
 $("#composer").addEventListener("submit",e=>{e.preventDefault();const q=$("#q").value;$("#q").value="";ask(q)});
@@ -332,25 +417,40 @@ $("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preven
 $("#stop").onclick=()=>ctl?.abort();
 document.addEventListener("click",e=>{
   const id=e.target.closest?.("[data-rid]")?.dataset.rid; if(!id) return;
-  location.hash="explore"; $("#fCur").value="";$("#fRat").value="0";$("#fFee").value="999999";$("#fTxt").value=""; renderExplore();
+  location.hash="explore"; ["#fCur","#fNear","#fFee","#fTxt"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;
+  renderExplore();
+  const pos=lastList.findIndex(x=>x.s.id===id); if(pos>=shown){shown=pos+1; renderExplore(false);}
   setTimeout(()=>{const c=$("#card-"+id); if(c){c.scrollIntoView({block:"center"});c.classList.add("flash");setTimeout(()=>c.classList.remove("flash"),1600)}},50);
 });
 
-const STARTERS=["CBSE school rated Very Good or better, under AED 20,000 a year",
- "Outstanding British primary school near Dubai Sports City, budget up to AED 55,000",
- "Affordable British school in Jebel Ali",
+const STARTERS=["CBSE school near Dubai Sports City, under AED 20,000, for KG1",
+ "Outstanding British primary school near Arabian Ranches, budget up to AED 60,000",
+ "American school in Al Qusais rated Good or better",
  "I need a school for my daughter"];
 $("#starters").innerHTML=STARTERS.map(s=>`<button class="chip" type="button">${esc(s)}</button>`).join("");
 $("#starters").addEventListener("click",e=>{if(e.target.matches(".chip")) ask(e.target.textContent)});
+$("#aiNote").textContent = MODE==="web" ? "Answers are written by an AI that sees only the retrieved records. Always confirm fees with the school."
+  : "The first answer asks you to allow Claude for this page. It uses your own Claude usage.";
 
-/* opening state: show what a retrieval looks like before any question */
-route();
-fetch("/schools.json").then(r=>r.json()).then(d=>{
-  SCHOOLS=d; selected=selected.filter(id=>SCHOOLS.some(s=>s.id===id));
+function boot(){
+  selected=selected.filter(id=>SCHOOLS.some(s=>s.id===id));
+  buildPlaces();
+  $("#fNear").innerHTML='<option value="">Anywhere</option>'+PLACE_LIST.map(p=>`<option>${esc(p.label)}</option>`).join("");
+  const curs={}; SCHOOLS.forEach(s=>s.curriculum.split(" / ").forEach(c=>curs[c]=(curs[c]||0)+1));
+  $("#fCur").innerHTML='<option value="">All</option>'+Object.entries(curs).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<option value="${esc(c)}">${esc(c)} (${n})</option>`).join("");
   document.querySelectorAll(".nSchools").forEach(e=>e.textContent=SCHOOLS.length);
-  bubble("bot",`<div class="body"><p><strong>Hi, I'm SchoolScout.</strong> I know ${SCHOOLS.length} Dubai private schools with KHDA ratings and fees. Tell me your budget, curriculum, your child's grade and the area you live in, or pick a question on the right.</p></div>`);
+  $("#nFees").textContent=SCHOOLS.filter(s=>s.fee_min_aed!=null).length;
+  bubble("bot",`<div class="body"><p><strong>Hi, I'm SchoolScout.</strong> I know all ${SCHOOLS.length} KHDA-registered private schools in Dubai, with ratings, locations and contacts, and fees for ${SCHOOLS.filter(s=>s.fee_min_aed!=null).length} of them. Tell me your budget, curriculum, your child's grade and where you live.</p></div>`);
   renderExplore(); route();
-}).catch(()=>bubble("bot",'<div class="body err">Could not load the school list. Refresh the page.</div>'));
+}
+if(MODE==="web"){
+  route();
+  fetch("/schools.json").then(r=>r.json()).then(d=>{SCHOOLS=d;boot()}).catch(()=>bubble("bot",'<div class="body err">Could not load the school list. Refresh the page.</div>'));
+}else{
+  (async()=>{ try{ sampleFn = window.claude ? await claude.use("sample") : null }catch{ sampleFn=null } })();
+  boot();
+}
 </script>
+
 </body>
 </html>

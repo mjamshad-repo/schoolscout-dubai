@@ -1,24 +1,29 @@
-// Retrieval checks. Run: npm test
+// Retrieval checks against the KHDA register data. Run: npm test
 import { SCHOOLS } from "../api/_schools.js";
 import { retrieve } from "../api/_retrieval.js";
 
+const name = id => SCHOOLS.find(s => s.id === id)?.name;
 const cases = [
-  { q: "CBSE school rated Very Good or better, under AED 20,000 a year", expectTop: ["Delhi Private School", "GEMS Our Own Indian School", "GEMS Our Own English High School", "The Indian High School"] },
-  { q: "Outstanding British primary school near Dubai Sports City, budget up to AED 55,000", expectTop: ["Victory Heights Primary School"] },
-  { q: "Affordable British school in Jebel Ali", expectTop: ["The Winchester School"] },
-  { q: "1. show me low to high 2. 1st standard", prev: ["I am looking for a cbse school near sports city"], expectCurriculum: "CBSE" },
-  { q: "IB school in Emirates Hills", expectTop: ["Dubai International Academy, Emirates Hills"] },
+  { q: "CBSE school rated Very Good or better, under AED 20,000 a year",
+    check: h => ["GEMS Our Own Indian School", "GEMS Our Own English High School", "The Indian High School", "Delhi Private School"].every(n => h.slice(0, 6).some(x => x.s.name === n)) },
+  { q: "Outstanding British primary school near Dubai Sports City, budget up to AED 55,000",
+    check: h => h[0].s.name === "Victory Heights Primary School" },
+  { q: "I am looking for a cbse school near by sports city fees under 20000aed for kg1",
+    check: (h, n) => n.place?.key === "dubai sports city" && h.slice(0, 5).every(x => x.s.curriculum.includes("Indian")) },
+  { q: "1. show me low to high 2. 1st standard", prev: ["I am looking for a cbse school near sports city"],
+    check: (h, n) => n.curriculum === "Indian" && n.place && h.slice(0, 6).every(x => x.s.curriculum.includes("Indian")) },
+  { q: "Affordable British school in Jebel Ali", check: (h, n) => n.place?.key === "jabal ali" && h[0].s.area.startsWith("Jabal Ali") },
+  { q: "IB school in Emirates Hills", check: h => h[0].s.name.startsWith("Dubai International Academy") },
+  { q: "American school in Al Qusais", check: (h, n) => n.place?.key === "al qusais" && h[0].s.curriculum.includes("American") },
+  { q: "French school near Oud Metha", check: h => h[0].s.curriculum.includes("French") && h[0].km < 3 },
 ];
 
 let fail = 0;
 for (const c of cases) {
   const { needs, hits } = retrieve(SCHOOLS, c.q, c.prev || []);
-  const names = hits.map(h => h.s.name);
-  let ok = true;
-  if (c.expectTop) ok = c.expectTop.every(n => names.slice(0, Math.max(c.expectTop.length, 3)).includes(n) || names.includes(n));
-  if (c.expectCurriculum) ok = needs.curriculum === c.expectCurriculum && hits.every(h => h.s.curriculum.includes("CBSE"));
+  const ok = !!c.check(hits, needs);
   if (!ok) fail++;
-  console.log(`${ok ? "PASS" : "FAIL"}  ${c.q}\n      -> ${hits.map(h => `${h.s.name} (${h.score})`).join(" | ")}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.q}${needs.place ? `   [place: ${needs.place.label}]` : ""}\n      -> ${hits.slice(0, 6).map(h => `${h.s.name} (${h.score}${h.km != null ? `, ${h.km}km` : ""}${h.s.fee_min_aed != null ? `, AED ${h.s.fee_min_aed}` : ", no fee"})`).join(" | ")}`);
 }
 console.log(fail ? `\n${fail} failing` : "\nall retrieval checks pass");
 process.exit(fail ? 1 : 0);

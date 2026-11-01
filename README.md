@@ -2,7 +2,9 @@
 
 Ask in plain words, get a cited shortlist of Dubai private schools. A retrieval-augmented (RAG) assistant over KHDA ratings, fees, curriculum and area.
 
-- **36 schools**: all 22 Outstanding schools (2026-27 fees), 11 Very Good schools (2026-27 fees), 3 with 2022 figures (flagged in the UI and to the AI).
+- **All 236 KHDA-registered private schools** from KHDA's register (rating with inspection year, curriculum, area, map location, phone, website, inspection report).
+- **Fees for 35 schools** from published 2026-27 lists (2 older 2022 figures, flagged). Others show "Fee not on file".
+- **Distance search**: "near Sports City" is measured from KHDA map points (straight line).
 - **Views:** Ask (AI shortlist) · Explore (filters) · Compare (side by side) · About & sources.
 - **AI providers:** Google Gemini (free tier), Groq (free tier) or Claude (paid). One environment variable switches between them.
 - **No dependencies.** Plain HTML + one Node serverless function.
@@ -43,7 +45,7 @@ Node 18 or newer. No `npm install` needed.
 
 ## Update or extend the data
 
-All data lives in `scripts/build-data.py`. Edit it, then `npm run data` regenerates `data/schools.csv`, `schools.json` (front end) and `api/_schools.js` (server).
+`scripts/build-data.py` reads the newest `data/khda_register_*.xlsx` and merges the `FEES` table (keyed by exact KHDA name). Run `npm run data` (needs `pip install openpyxl`), then `npm run web`, which builds `index.html` (website) and `dist/artifact.html` (Claude artifact) from `web/app.src.html`.
 
 To cover all ~227 Dubai private schools, request KHDA's open dataset on Dubai Pulse (`khda_dubai_private_schools-open`; access is granted within about 14 days) and load its CSV in `build-data.py`. Above a few hundred records, swap the keyword retrieval for embeddings.
 
@@ -51,7 +53,8 @@ To cover all ~227 Dubai private schools, request KHDA's open dataset on Dubai Pu
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | The whole front end |
+| `web/app.src.html` | Front-end source for both the website and the Claude artifact |
+| `index.html` | Built website (do not edit; run `npm run web`) |
 | `schools.json` | School records for Explore and Compare |
 | `api/ask.js` | `/api/ask`: validation, rate limit, retrieval, AI call |
 | `api/_retrieval.js` | Needs parsing and scoring |
