@@ -29,12 +29,14 @@ const PLACE_ALIASES = {
   "dip": "dubai investment park", "investment park": "dubai investment park", "silicon oasis": "dubai silicon oasis",
   "dso": "dubai silicon oasis", "dubailand": "dubai land", "jebel ali": "jabal ali", "festival city": "dubai festival city",
   "healthcare city": "dubai healthcare city", "knowledge park": "dubai knowledge park", "sufouh": "al safouh",
-  "al sufouh": "al safouh", "muhaisnah": "muhaisnah", "mirdif": "mirdif", "rashidiya": "al rashidiya",
+  "al sufouh": "al safouh", "muhaisnah": "muhaisnah", "muhaisinah": "muhaisnah", "muhaisanah": "muhaisnah", "muhaisina": "muhaisnah", "muhaisna": "muhaisnah", "muhaysnah": "muhaisnah", "mirdif": "mirdif", "rashidiya": "al rashidiya",
   "twar": "al twar", "satwa": "al satwa", "khawaneej": "al khwaneej", "khwaneej": "al khwaneej",
   "dubai south": "dubai south hq", "town square": "dubai land", "arabian ranches": "arabian ranches",
 };
 
-const baseArea = a => String(a || "").toLowerCase().replace(/\s*\(.*\)$/, "").replace(/\s+(first|second|third|fourth|fifth|\d+)$/, "").trim();
+// KHDA spells some areas two ways (Muhaisnah / Muhaisanah): treat them as one place
+const SAME_AREA = { "muhaisanah": "muhaisnah" };
+const baseArea = a => { const b = String(a || "").toLowerCase().replace(/\s*\(.*\)$/, "").replace(/\s+(first|second|third|fourth|fifth|\d+)$/, "").trim(); return SAME_AREA[b] || b; };
 
 let PLACES = null; // base area -> {lat, lng, label}
 function places(schools) {
@@ -102,7 +104,7 @@ export function parseNeeds(q, schools = []) {
 
 function score(s, n) {
   let sc = 0;
-  const text = (s.name + " " + s.curriculum).toLowerCase();
+  const text = (s.name + " " + s.curriculum + " " + s.area).toLowerCase();
   if (n.curriculum) sc += s.curriculum.includes(n.curriculum) ? 5 : -4;
   const rank = RANK[s.khda_rating] ?? 0;
   if (n.minRating) sc += rank >= n.minRating ? 3 : -3;
@@ -118,7 +120,8 @@ function score(s, n) {
     const d = km(n.place, s);
     sc += d <= 3 ? 5 : d <= 6 ? 3.5 : d <= 10 ? 2 : d <= 15 ? 0.5 : -2;
   }
-  for (const w of n.terms) if (text.includes(w)) sc += 2;     // school names
+  const named = n.terms.filter(w => text.includes(w)).length;  // school names, e.g. "GEMS Warqa"
+  sc += named * 2 + (named >= 2 ? 6 : 0);
   sc += rank * 0.25 + (s.fee_min_aed != null ? 0.3 : 0);
   return Math.round(sc * 100) / 100;
 }

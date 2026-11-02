@@ -177,6 +177,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .chip svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent)}
 .foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.hero .lens,.dots i{animation:none}}
+.cmpnear{display:flex;flex-direction:column;gap:4px;max-width:280px;margin-top:14px}
 </style>
 </head>
 <body>
@@ -296,6 +297,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
       <button id="askCmp" class="btn-primary" type="button">Ask SchoolScout about these</button>
       <button id="clearCmp" type="button">Clear selection</button>
     </div>
+    <label class="cmpnear"><span class="label">Distance from</span><select id="cNear"><option value="">Choose an area</option></select></label>
     <div class="cmp" id="cmp"></div>
   </section>
 
@@ -358,7 +360,8 @@ let PLACE_LIST=[];
 function buildPlaces(){
   const acc={};
   for(const s of SCHOOLS){ if(typeof s.lat!=="number") continue;
-    const label=s.area.replace(/\s*\(.*\)$/,"").replace(/\s+(First|Second|Third|Fourth|Fifth|\d+)$/,"");
+    let label=s.area.replace(/\s*\(.*\)$/,"").replace(/\s+(First|Second|Third|Fourth|Fifth|\d+)$/,"");
+    if(label==="Muhaisanah") label="Muhaisnah";
     (acc[label] ||= {lat:0,lng:0,n:0}); acc[label].lat+=s.lat; acc[label].lng+=s.lng; acc[label].n++; }
   PLACE_LIST=Object.entries(acc).map(([label,v])=>({label,lat:v.lat/v.n,lng:v.lng/v.n})).sort((a,b)=>a.label.localeCompare(b.label));
 }
@@ -442,12 +445,15 @@ function renderCompare(){
   const list=selected.map(byId).filter(Boolean);
   $("#askCmp").disabled = list.length<2;
   if(list.length<2){$("#cmp").innerHTML='<div class="empty panel">Tick at least two schools on the Explore page to compare them.</div>';return}
+  const cnear=PLACE_LIST.find(p=>p.label===($("#cNear").value||$("#fNear").value));
   const L=(href,t)=>href?`<a href="${esc(href)}" target="_blank" rel="noopener">${t}</a>`:"Not listed";
   const rows=[["KHDA rating",s=>`<span class="badge rating ${rcls(s.khda_rating)}">${esc(s.khda_rating)}</span>`],
     ["Inspection",s=>esc(s.rating_year||"None yet")],["Curriculum",s=>esc(s.curriculum)],
     ["Fee range",s=>s.fee_min_aed!=null?`<span class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</span>`:"Not on file"],
     ...GRADES.map((label,i)=>[label,s=>s.fees_by_grade?.[i]!=null?`<span class="fee">${aed(s.fees_by_grade[i])}</span>`:"—"]).filter((_,i)=>selected.some(id=>byId(id)?.fees_by_grade?.[i]!=null)),
-    ["Area",s=>esc(s.area)],["Grades",s=>esc(s.grades)],["Established",s=>esc(s.established||"Not listed")],
+    ["Area",s=>esc(s.area)],
+    ...(cnear?[[`Distance from ${esc(cnear.label)}`,s=>typeof s.lat==="number"?`<span class="dist">${kmBetween(cnear,s).toFixed(1)} km</span>`:"No map point"]]:[]),
+    ["Grades",s=>esc(s.grades)],["Established",s=>esc(s.established||"Not listed")],
     ["Phone",s=>esc(s.phone||"Not listed")],["Website",s=>L(s.website,"Open")],
     ["Map",s=>typeof s.lat==="number"?L(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`,"Open"):"Not listed"],
     ["KHDA report",s=>L(s.inspection_report,"Open")],
@@ -542,6 +548,9 @@ function boot(){
   buildPlaces();
   $("#fGrade").innerHTML='<option value="">Any grade</option>'+GRADES.map((g,i)=>`<option value="${i}">${esc(g)}</option>`).join("");
   $("#fNear").innerHTML='<option value="">Anywhere</option>'+PLACE_LIST.map(p=>`<option>${esc(p.label)}</option>`).join("");
+  $("#cNear").innerHTML='<option value="">Choose an area</option>'+PLACE_LIST.map(p=>`<option>${esc(p.label)}</option>`).join("");
+  $("#cNear").addEventListener("input",()=>{ try{localStorage.setItem("ss_cnear",$("#cNear").value)}catch{} renderCompare(); });
+  try{ $("#cNear").value=localStorage.getItem("ss_cnear")||""; }catch{}
   const curs={}; SCHOOLS.forEach(s=>s.curriculum.split(" / ").forEach(c=>curs[c]=(curs[c]||0)+1));
   $("#fCur").innerHTML='<option value="">All</option>'+Object.entries(curs).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<option value="${esc(c)}">${esc(c)} (${n})</option>`).join("");
   document.querySelectorAll(".nSchools").forEach(e=>e.textContent=SCHOOLS.length);

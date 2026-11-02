@@ -168,6 +168,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .chip svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent)}
 .foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.hero .lens,.dots i{animation:none}}
+.cmpnear{display:flex;flex-direction:column;gap:4px;max-width:280px;margin-top:14px}
 </style>
 <header><div class="wrap">
   <a class="brand" href="#ask" aria-label="SchoolScout home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>SchoolScout</span><small>Dubai</small><span class="ai-pill">AI</span></a>
@@ -285,6 +286,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
       <button id="askCmp" class="btn-primary" type="button">Ask SchoolScout about these</button>
       <button id="clearCmp" type="button">Clear selection</button>
     </div>
+    <label class="cmpnear"><span class="label">Distance from</span><select id="cNear"><option value="">Choose an area</option></select></label>
     <div class="cmp" id="cmp"></div>
   </section>
 
@@ -350,12 +352,14 @@ const PLACE_ALIASES = {
   "dip": "dubai investment park", "investment park": "dubai investment park", "silicon oasis": "dubai silicon oasis",
   "dso": "dubai silicon oasis", "dubailand": "dubai land", "jebel ali": "jabal ali", "festival city": "dubai festival city",
   "healthcare city": "dubai healthcare city", "knowledge park": "dubai knowledge park", "sufouh": "al safouh",
-  "al sufouh": "al safouh", "muhaisnah": "muhaisnah", "mirdif": "mirdif", "rashidiya": "al rashidiya",
+  "al sufouh": "al safouh", "muhaisnah": "muhaisnah", "muhaisinah": "muhaisnah", "muhaisanah": "muhaisnah", "muhaisina": "muhaisnah", "muhaisna": "muhaisnah", "muhaysnah": "muhaisnah", "mirdif": "mirdif", "rashidiya": "al rashidiya",
   "twar": "al twar", "satwa": "al satwa", "khawaneej": "al khwaneej", "khwaneej": "al khwaneej",
   "dubai south": "dubai south hq", "town square": "dubai land", "arabian ranches": "arabian ranches",
 };
 
-const baseArea = a => String(a || "").toLowerCase().replace(/\s*\(.*\)$/, "").replace(/\s+(first|second|third|fourth|fifth|\d+)$/, "").trim();
+// KHDA spells some areas two ways (Muhaisnah / Muhaisanah): treat them as one place
+const SAME_AREA = { "muhaisanah": "muhaisnah" };
+const baseArea = a => { const b = String(a || "").toLowerCase().replace(/\s*\(.*\)$/, "").replace(/\s+(first|second|third|fourth|fifth|\d+)$/, "").trim(); return SAME_AREA[b] || b; };
 
 let PLACES = null; // base area -> {lat, lng, label}
 function places(schools) {
@@ -423,7 +427,7 @@ function parseNeeds(q, schools = []) {
 
 function score(s, n) {
   let sc = 0;
-  const text = (s.name + " " + s.curriculum).toLowerCase();
+  const text = (s.name + " " + s.curriculum + " " + s.area).toLowerCase();
   if (n.curriculum) sc += s.curriculum.includes(n.curriculum) ? 5 : -4;
   const rank = RANK[s.khda_rating] ?? 0;
   if (n.minRating) sc += rank >= n.minRating ? 3 : -3;
@@ -439,7 +443,8 @@ function score(s, n) {
     const d = km(n.place, s);
     sc += d <= 3 ? 5 : d <= 6 ? 3.5 : d <= 10 ? 2 : d <= 15 ? 0.5 : -2;
   }
-  for (const w of n.terms) if (text.includes(w)) sc += 2;     // school names
+  const named = n.terms.filter(w => text.includes(w)).length;  // school names, e.g. "GEMS Warqa"
+  sc += named * 2 + (named >= 2 ? 6 : 0);
   sc += rank * 0.25 + (s.fee_min_aed != null ? 0.3 : 0);
   return Math.round(sc * 100) / 100;
 }
@@ -527,7 +532,8 @@ let PLACE_LIST=[];
 function buildPlaces(){
   const acc={};
   for(const s of SCHOOLS){ if(typeof s.lat!=="number") continue;
-    const label=s.area.replace(/\s*\(.*\)$/,"").replace(/\s+(First|Second|Third|Fourth|Fifth|\d+)$/,"");
+    let label=s.area.replace(/\s*\(.*\)$/,"").replace(/\s+(First|Second|Third|Fourth|Fifth|\d+)$/,"");
+    if(label==="Muhaisanah") label="Muhaisnah";
     (acc[label] ||= {lat:0,lng:0,n:0}); acc[label].lat+=s.lat; acc[label].lng+=s.lng; acc[label].n++; }
   PLACE_LIST=Object.entries(acc).map(([label,v])=>({label,lat:v.lat/v.n,lng:v.lng/v.n})).sort((a,b)=>a.label.localeCompare(b.label));
 }
@@ -611,12 +617,15 @@ function renderCompare(){
   const list=selected.map(byId).filter(Boolean);
   $("#askCmp").disabled = list.length<2;
   if(list.length<2){$("#cmp").innerHTML='<div class="empty panel">Tick at least two schools on the Explore page to compare them.</div>';return}
+  const cnear=PLACE_LIST.find(p=>p.label===($("#cNear").value||$("#fNear").value));
   const L=(href,t)=>href?`<a href="${esc(href)}" target="_blank" rel="noopener">${t}</a>`:"Not listed";
   const rows=[["KHDA rating",s=>`<span class="badge rating ${rcls(s.khda_rating)}">${esc(s.khda_rating)}</span>`],
     ["Inspection",s=>esc(s.rating_year||"None yet")],["Curriculum",s=>esc(s.curriculum)],
     ["Fee range",s=>s.fee_min_aed!=null?`<span class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</span>`:"Not on file"],
     ...GRADES.map((label,i)=>[label,s=>s.fees_by_grade?.[i]!=null?`<span class="fee">${aed(s.fees_by_grade[i])}</span>`:"—"]).filter((_,i)=>selected.some(id=>byId(id)?.fees_by_grade?.[i]!=null)),
-    ["Area",s=>esc(s.area)],["Grades",s=>esc(s.grades)],["Established",s=>esc(s.established||"Not listed")],
+    ["Area",s=>esc(s.area)],
+    ...(cnear?[[`Distance from ${esc(cnear.label)}`,s=>typeof s.lat==="number"?`<span class="dist">${kmBetween(cnear,s).toFixed(1)} km</span>`:"No map point"]]:[]),
+    ["Grades",s=>esc(s.grades)],["Established",s=>esc(s.established||"Not listed")],
     ["Phone",s=>esc(s.phone||"Not listed")],["Website",s=>L(s.website,"Open")],
     ["Map",s=>typeof s.lat==="number"?L(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`,"Open"):"Not listed"],
     ["KHDA report",s=>L(s.inspection_report,"Open")],
@@ -711,6 +720,9 @@ function boot(){
   buildPlaces();
   $("#fGrade").innerHTML='<option value="">Any grade</option>'+GRADES.map((g,i)=>`<option value="${i}">${esc(g)}</option>`).join("");
   $("#fNear").innerHTML='<option value="">Anywhere</option>'+PLACE_LIST.map(p=>`<option>${esc(p.label)}</option>`).join("");
+  $("#cNear").innerHTML='<option value="">Choose an area</option>'+PLACE_LIST.map(p=>`<option>${esc(p.label)}</option>`).join("");
+  $("#cNear").addEventListener("input",()=>{ try{localStorage.setItem("ss_cnear",$("#cNear").value)}catch{} renderCompare(); });
+  try{ $("#cNear").value=localStorage.getItem("ss_cnear")||""; }catch{}
   const curs={}; SCHOOLS.forEach(s=>s.curriculum.split(" / ").forEach(c=>curs[c]=(curs[c]||0)+1));
   $("#fCur").innerHTML='<option value="">All</option>'+Object.entries(curs).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<option value="${esc(c)}">${esc(c)} (${n})</option>`).join("");
   document.querySelectorAll(".nSchools").forEach(e=>e.textContent=SCHOOLS.length);

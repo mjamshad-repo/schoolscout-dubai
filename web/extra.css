@@ -52,3 +52,4 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .chip svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent)}
 .foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.hero .lens,.dots i{animation:none}}
+.cmpnear{display:flex;flex-direction:column;gap:4px;max-width:280px;margin-top:14px}
