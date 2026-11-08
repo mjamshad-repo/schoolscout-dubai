@@ -16,7 +16,7 @@ export class ProviderError extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
 }
 
-export function chain() {
+export function chain(order = env.AI_ORDER) {
   if ((env.AI_PROVIDER || "").toLowerCase() === "mock") return [{ id: "mock", run: mock }];
   const steps = {
     cloudflare: env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID ? [{ id: `cloudflare:${env.CLOUDFLARE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast"}`, run: cloudflare }] : [],
@@ -25,8 +25,8 @@ export function chain() {
   };
   const geminiModels = env.GEMINI_API_KEY ? (env.GEMINI_MODELS ? env.GEMINI_MODELS.split(",").map(s => s.trim()).filter(Boolean) : DEFAULT_GEMINI) : [];
   const g = m => ({ id: `gemini:${m}`, run: (s, t) => gemini(m, s, t) });
-  if (env.AI_ORDER) {
-    return env.AI_ORDER.split(",").map(s => s.trim()).flatMap(s => s.startsWith("gemini:") ? (env.GEMINI_API_KEY ? [g(s.slice(7))] : []) : (steps[s] || []));
+  if (order) {
+    return order.split(",").map(s => s.trim()).flatMap(s => s.startsWith("gemini:") ? (env.GEMINI_API_KEY ? [g(s.slice(7))] : []) : (steps[s] || []));
   }
   const lite = geminiModels.filter(m => /lite/.test(m)), rest = geminiModels.filter(m => !/lite/.test(m));
   return [...steps.cloudflare, ...steps.groq, ...lite.map(g), ...rest.map(g), ...steps.anthropic];
@@ -39,8 +39,8 @@ const cooling = new Map();
 const COOL_MS = { quota: 15 * 60_000, busy: 60_000, slow: 5 * 60_000, missing: 6 * 3600_000 };
 
 // system: string; turns: [{role, content}] ending on a user turn. Returns { text, model }.
-export async function complete(system, turns) {
-  const steps = chain();
+export async function complete(system, turns, order) {
+  const steps = chain(order);
   if (!steps.length) throw new ProviderError("No AI provider is configured. Set GEMINI_API_KEY (free), GROQ_API_KEY or CLOUDFLARE_API_TOKEN.", 500);
   const started = Date.now(); let last;
   for (const step of steps) {

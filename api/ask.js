@@ -47,7 +47,7 @@ export default async function handler(req, res) {
   if (other) return finish(other, "rules", none);
   const clarify = needsClarifying(needs, SCHOOLS);
   if (clarify) return finish(clarify, "rules", none);
-  const key = !history.length && cacheKey(question), hit = key && cache.get(key);
+  const key = !history.length && !req.headers["x-test-ai-order"] && cacheKey(question), hit = key && cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return finish(hit.answer, "cache");
 
   if (!verified) return finish(searchOnlyAnswer(hits, needs, "check"), "search:unverified");
@@ -60,7 +60,9 @@ export default async function handler(req, res) {
   const records = hits.map(h => recordText(h.s, h.km, needs.place?.label || "", needs.grade ?? null)).join("\n\n");
   const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
   try {
-    const { text, model } = await complete(RULES, turns);
+    // Preview deployments only (behind Vercel login): a tester can pick the AI order for one request
+    const testOrder = process.env.VERCEL_ENV === "preview" ? clip(req.headers["x-test-ai-order"], 200) || undefined : undefined;
+    const { text, model } = await complete(RULES, turns, testOrder);
     if (key) { cache.set(key, { answer: text, at: Date.now() }); if (cache.size > 300) cache.delete(cache.keys().next().value); }
     return finish(text, model);
   } catch (e) {
