@@ -10,7 +10,7 @@
 
 const env = process.env;
 const DEFAULT_GEMINI = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemma-4-31b-it", "gemini-2.5-flash"];
-const PER_CALL_MS = 14000;
+const PER_CALL_MS = 10000;   // a model slower than this is skipped; the next one answers instead
 
 export class ProviderError extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
@@ -19,7 +19,7 @@ export class ProviderError extends Error {
 export function chain() {
   if ((env.AI_PROVIDER || "").toLowerCase() === "mock") return [{ id: "mock", run: mock }];
   const steps = {
-    cloudflare: env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID ? [{ id: `cloudflare:${env.CLOUDFLARE_MODEL || "@cf/openai/gpt-oss-120b"}`, run: cloudflare }] : [],
+    cloudflare: env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID ? [{ id: `cloudflare:${env.CLOUDFLARE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast"}`, run: cloudflare }] : [],
     groq: env.GROQ_API_KEY ? [{ id: `groq:${env.GROQ_MODEL || "openai/gpt-oss-120b"}`, run: groq }] : [],
     anthropic: env.ANTHROPIC_API_KEY ? [{ id: `anthropic:${env.ANTHROPIC_MODEL || "claude-haiku-5-5"}`, run: anthropic }] : [],
   };
@@ -36,7 +36,7 @@ export const providerName = () => chain().map(c => c.id.split(":")[0])[0] || "no
 
 // Models that just said "out of quota" are skipped for a while (per server instance), so later visitors don't wait on them.
 const cooling = new Map();
-const COOL_MS = { quota: 15 * 60_000, busy: 60_000, missing: 6 * 3600_000 };
+const COOL_MS = { quota: 15 * 60_000, busy: 60_000, slow: 5 * 60_000, missing: 6 * 3600_000 };
 
 // system: string; turns: [{role, content}] ending on a user turn. Returns { text, model }.
 export async function complete(system, turns) {
@@ -60,7 +60,7 @@ async function post(url, headers, body) {
   const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), PER_CALL_MS);
   let r;
   try { r = await fetch(url, { method: "POST", signal: ctl.signal, headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) }); }
-  catch (err) { const e = new ProviderError(err.name === "AbortError" ? "timed out" : err.message, 503); e.kind = "busy"; throw e; }
+  catch (err) { const e = new ProviderError(err.name === "AbortError" ? "timed out" : err.message, 503); e.kind = err.name === "AbortError" ? "slow" : "busy"; throw e; }
   finally { clearTimeout(timer); }
   const data = await r.json().catch(() => ({}));
   if (r.ok) return data;
@@ -112,7 +112,7 @@ async function openaiStyle(url, key, model, system, turns) {
 }
 const groq = (s, t) => openaiStyle("https://api.groq.com/openai/v1/chat/completions", env.GROQ_API_KEY, env.GROQ_MODEL || "openai/gpt-oss-120b", s, t);
 const cloudflare = (s, t) => openaiStyle(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
-  env.CLOUDFLARE_API_TOKEN, env.CLOUDFLARE_MODEL || "@cf/openai/gpt-oss-120b", s, t);
+  env.CLOUDFLARE_API_TOKEN, env.CLOUDFLARE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast", s, t);
 
 async function anthropic(system, turns) {
   const data = await post("https://api.anthropic.com/v1/messages",
