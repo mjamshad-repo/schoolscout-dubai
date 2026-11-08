@@ -46,7 +46,7 @@ export const visitorCode = ip => createHash("sha256").update(`${ip}|${today()}|$
 
 // Adds one to today's counters and returns { all, visitor }. Returns null when the store is off or slow.
 export async function countAiCall(ip) {
-  if (!storeEnabled()) return null;
+  if (!storeEnabled() || (env.VERCEL_ENV && env.VERCEL_ENV !== "production")) return null;   // tests don't use up the site's daily cap
   try {
     const inc = k => query(`INSERT INTO counters (day, k, n) VALUES (?, ?, 1) ON CONFLICT(day, k) DO UPDATE SET n = n + 1 RETURNING n`, [today(), k]).then(r => r[0]?.n ?? 0);
     const [all, visitor] = await Promise.all([inc("all"), inc("v:" + visitorCode(ip))]);

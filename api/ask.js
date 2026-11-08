@@ -36,7 +36,8 @@ export default async function handler(req, res) {
   const { hits, needs } = retrieve(SCHOOLS, question, history.filter(t => t.role === "user").map(t => t.content));
   const meta = { retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, grade: needs.grade ?? null, maxKm: needs.place ? needs.maxKm ?? null : null };
   const finish = async (answer, provider, m = meta) => {
-    const logId = await logAsk({ question, answer, provider, ...m, ms: Date.now() - started, turn: history.filter(t => t.role === "user").length + 1 });
+    const tag = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production" ? `[${process.env.VERCEL_ENV}] ` : "";
+    const logId = await logAsk({ question: tag + question, answer, provider, ...m, ms: Date.now() - started, turn: history.filter(t => t.role === "user").length + 1 });
     res.status(200).json({ answer, ...m, provider, logId });
   };
   const none = { retrieved: [], place: null, grade: null, maxKm: null };
