@@ -1,4 +1,6 @@
-# SchoolScout Dubai
+# UAE School Fees (uaeschoolfees.com)
+
+Live at https://www.uaeschoolfees.com. Covers Dubai today; Abu Dhabi and Sharjah planned.
 
 Ask in plain words, get a cited shortlist of Dubai private schools. A retrieval-augmented (RAG) assistant over KHDA ratings, fees, curriculum and area.
 

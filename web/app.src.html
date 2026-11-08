@@ -1,5 +1,5 @@
 <header><div class="wrap">
-  <a class="brand" href="#ask" aria-label="SchoolScout home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>SchoolScout</span><small>Dubai</small><span class="ai-pill">AI</span></a>
+  <a class="brand" href="#ask" aria-label="UAE School Fees home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>UAE School Fees</span><small>Dubai</small><span class="ai-pill">AI</span></a>
   <nav aria-label="Main">
     <a href="#ask" data-view="ask">Ask</a>
     <a href="#explore" data-view="explore">Explore</a>
@@ -15,8 +15,9 @@
       <div class="hero-copy">
         <span class="eyebrow"><svg class="eyebrow-icon" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg> AI school finder for Dubai parents</span>
         <h1>Find a Dubai school that fits your family</h1>
-        <p class="lede">Ask in plain words: budget, curriculum, your child's grade and where you live. SchoolScout searches every KHDA-registered private school and writes a shortlist you can check.</p>
-        <ul class="stats" aria-label="What SchoolScout covers">
+        <p class="coverage"><span class="cov-dot" aria-hidden="true"></span><span>Covering all <span class="nSchools">236</span> private schools in Dubai. Abu Dhabi and Sharjah coming soon.</span></p>
+        <p class="lede">Ask in plain words: budget, curriculum, your child's grade and where you live. We search every KHDA-registered private school in Dubai and write a shortlist you can check, with the official fee for your child's grade.</p>
+        <ul class="stats" aria-label="What UAE School Fees covers">
           <li><strong class="nSchools">236</strong><span>KHDA schools</span></li>
           <li><strong id="statFees">229</strong><span>with fees by grade</span></li>
           <li><strong id="statOut">23</strong><span>rated Outstanding</span></li>
@@ -111,7 +112,7 @@
     <h1>Compare schools</h1>
     <p class="lede">Side by side, with the source behind every figure.</p>
     <div class="row" style="margin-top:12px">
-      <button id="askCmp" class="btn-primary" type="button">Ask SchoolScout about these</button>
+      <button id="askCmp" class="btn-primary" type="button">Ask the AI about these</button>
       <button id="clearCmp" type="button">Clear selection</button>
     </div>
     <label class="cmpnear"><span class="label">Distance from</span><select id="cNear"><option value="">Choose an area</option></select></label>
@@ -122,7 +123,8 @@
   <section id="view-about" hidden>
     <h1>About &amp; sources</h1>
     <div class="about">
-      <p>SchoolScout is a retrieval-augmented assistant for parents choosing a private school in Dubai. It puts KHDA's official school register, published fees and distance search in one place, and answers questions with citations.</p>
+      <p>UAE School Fees helps parents choose a private school. It puts the official school register, approved fees by grade and distance search in one place, and an AI assistant answers questions with citations. It covers Dubai today; Abu Dhabi and Sharjah will follow once official data is available.</p>
+      <p><strong>Not affiliated with KHDA or the Government of Dubai.</strong> School data comes from KHDA's published register and open data, credited below.</p>
       <div>
         <h2>Data</h2>
         <ul>
@@ -138,12 +140,13 @@
       </div>
       <div>
         <h2>Limits</h2>
-        <p>Information only, not admission advice. Always confirm fees, seats and ratings with the school and on khda.gov.ae before applying.</p>
+        <p>Information only, not admission advice. Fees shown are KHDA-approved annual tuition. They do not include registration, re-enrolment, transport, uniforms, books, trips or exam fees, and they may change for the next academic year. Always confirm the final amount, seats and ratings with the school before applying.</p>
+        <p>Spotted a wrong fee or a missing school? <a href="mailto:hello@uaeschoolfees.com?subject=Data%20correction">Tell us</a>.</p>
       </div>
     </div>
   </section>
 </main>
-<footer><div class="wrap foot"><svg class="logo sm" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>SchoolScout · <span class="nSchools">236</span> KHDA-registered schools · Information only. Confirm fees and ratings on khda.gov.ae and with the school.</span></div></footer>
+<footer><div class="wrap foot"><svg class="logo sm" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>UAE School Fees · Information only. Fees are KHDA-approved tuition and exclude extras; confirm the final fee with the school. Data: KHDA open data. Not affiliated with KHDA or the Government of Dubai.</span><nav class="foot-links" aria-label="Legal"><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="mailto:hello@uaeschoolfees.com">Contact</a></nav></div></footer>
 
 <script>
 /* MODE is "web" (server answers at /api/ask) or "artifact" (retrieval + Claude run in the page). Set by scripts/build-web.py. */
@@ -199,8 +202,12 @@ const curGrade=()=>{const v=$("#fGrade")?.value; return v===""||v==null?null:+v;
 function feeHtml(s,g=curGrade()){
   if(s.fee_min_aed==null) return `<div class="fee unknown">Fee not on file</div>`;
   if(g!=null && s.fees_by_grade){ const f=s.fees_by_grade[g];
-    return f!=null ? `<div class="fee">${aed(f)} <span class="meta">a year for ${esc(GRADES[g])}</span></div>` : `<div class="fee unknown">Does not offer ${esc(GRADES[g])}</div>`; }
-  return `<div class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</div>`;
+    return f!=null ? `<div class="fee">${aed(f)} <span class="meta">a year for ${esc(GRADES[g])}</span></div>${FEE_NOTE(s)}` : `<div class="fee unknown">Does not offer ${esc(GRADES[g])}</div>`; }
+  return `<div class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</div>${FEE_NOTE(s)}`;
+}
+function FEE_NOTE(s){
+  const yr=(s.fee_source.match(/\((\d{4}-\d{2})\)/)||[])[1]||"";
+  return `<div class="fee-note">KHDA-approved tuition${yr?`, ${esc(yr)}`:""}. Excludes extras like transport and uniforms.</div>`;
 }
 function feeTable(s){
   if(!s.fees_by_grade) return "";
@@ -217,7 +224,7 @@ function card(s, d){
     <div class="meta">${esc(s.area)}${s.grades && s.grades!=="Not in source"?` · ${esc(s.grades)}`:""}</div>
     ${feeTable(s)}
     ${links(s)}
-    <div class="actions"><label><input type="checkbox" data-cmp="${s.id}" ${on?"checked":""}> Compare</label></div>
+    <div class="actions"><label><input type="checkbox" data-cmp="${s.id}" ${on?"checked":""}> Compare</label><a class="report" href="mailto:hello@uaeschoolfees.com?subject=${encodeURIComponent(`Wrong info: ${s.name} (${s.id})`)}">Report wrong info</a></div>
   </article>`;
 }
 
@@ -291,10 +298,11 @@ function md(text){
   return html.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
              .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
 }
+const ANSWER_NOTE='<p class="answer-note">Information only. Fees are KHDA-approved tuition and exclude extras such as transport and uniforms; confirm the final amount with the school.</p>';
 const AVATAR='<span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.1 6.1 2.4-6.1 2.4L12 19.5l-2.4-6.1-6.1-2.4 6.1-2.4z" fill="currentColor"/><path d="M19 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" opacity=".7"/></svg></span>';
 function bubble(role,html){
   const d=document.createElement("div"); d.className="msg "+role;
-  d.innerHTML = role==="bot" ? `${AVATAR}<div class="bot-col"><div class="who">SchoolScout AI</div>${html}</div>` : html;
+  d.innerHTML = role==="bot" ? `${AVATAR}<div class="bot-col"><div class="who">School Fees AI</div>${html}</div>` : html;
   $("#thread").append(d); d.scrollIntoView({block:"nearest"}); return d; }
 const SAMPLE_ERR={not_granted:"Claude isn't allowed for this page. Allow it from the page's permissions to get answers; Explore and Compare still work.",
   sampling_disabled:"Claude isn't available for this account. Explore and Compare still work.",
@@ -330,7 +338,7 @@ async function ask(q){
   try{
     const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
     showMeta(data.retrieved,data.place,data.grade);
-    body.classList.remove("thinking"); body.innerHTML=md(data.answer);
+    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE;
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
   }catch(e){
@@ -357,7 +365,7 @@ const STARTERS=[["pin","CBSE school near Dubai Sports City, under AED 20,000, fo
  ["kid","I need a school for my daughter"]];
 $("#starters").innerHTML=STARTERS.map(([i,s])=>`<button class="chip" type="button" data-q="${esc(s)}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[i]}</svg><span>${esc(s)}</span></button>`).join("");
 $("#starters").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) ask(b.dataset.q)});
-$("#aiNote").textContent = MODE==="web" ? "Answers are written by an AI that sees only the retrieved records. Always confirm fees with the school."
+$("#aiNote").textContent = MODE==="web" ? "Answers are written by an AI that sees only the retrieved records. Information only: always confirm the final fees with the school."
   : "The first answer asks you to allow Claude for this page. It uses your own Claude usage.";
 
 function boot(){
@@ -374,7 +382,7 @@ function boot(){
   $("#nFees").textContent=$("#statFees").textContent=SCHOOLS.filter(s=>s.fee_min_aed!=null).length;
   { const yc={}; SCHOOLS.forEach(s=>{const m=(s.fee_source||"").match(/\((\d{4}-\d{2})\)/); if(m) yc[m[1]]=(yc[m[1]]||0)+1;}); const top=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0]; if(top) $("#statYear").textContent=top[0]; }
   $("#statOut").textContent=SCHOOLS.filter(s=>s.khda_rating==="Outstanding").length;
-  bubble("bot",`<div class="body"><p><strong>Hi, I'm SchoolScout.</strong> I know all ${SCHOOLS.length} KHDA-registered private schools in Dubai, with ratings, locations and contacts, and KHDA's official fees by grade for ${SCHOOLS.filter(s=>s.fee_min_aed!=null).length} of them. Tell me your budget, curriculum, your child's grade and where you live.</p></div>`);
+  bubble("bot",`<div class="body"><p><strong>Hi, I'm the UAE School Fees assistant.</strong> I know all ${SCHOOLS.length} KHDA-registered private schools in Dubai, with ratings, locations and contacts, and KHDA's official fees by grade for ${SCHOOLS.filter(s=>s.fee_min_aed!=null).length} of them. Tell me your budget, curriculum, your child's grade and where you live.</p></div>`);
   renderExplore(); route();
 }
 if(MODE==="web"){

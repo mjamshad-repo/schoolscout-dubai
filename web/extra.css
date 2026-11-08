@@ -53,3 +53,16 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.hero .lens,.dots i{animation:none}}
 .cmpnear{display:flex;flex-direction:column;gap:4px;max-width:280px;margin-top:14px}
+
+/* Brand, coverage and information-only notes */
+.coverage{display:inline-flex;align-items:baseline;gap:8px;margin:4px 0 12px;line-height:1.35;font:600 .88rem var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.cov-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;transform:translateY(-1px)}
+.fee-note{font-size:.78rem;color:var(--muted);margin-top:2px}
+.answer-note{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px;margin-top:10px}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.actions .report{font-size:.8rem;color:var(--muted)}
+.foot{justify-content:space-between}
+.foot>span{flex:1 1 320px}
+.foot-links{display:flex;gap:14px}
+.foot-links a{color:var(--accent);font-weight:600;text-decoration:none}
+.foot-links a:hover{text-decoration:underline}
