@@ -207,10 +207,32 @@ th.sortable[aria-sort=descending]::after{content:" ↓";opacity:1}
 th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
 .sort-hint{font-size:.78rem;color:var(--muted);margin:4px 0 0}
 
-/* AI answer tables: keep numbers on one line, give the short Note column a sensible width */
-.msg.bot table td:nth-child(2),.msg.bot table td:nth-child(3){white-space:nowrap}
-.msg.bot table td:last-child{min-width:7.5em}
-@media (max-width:640px){.msg.bot table td:nth-child(2),.msg.bot table td:nth-child(3){white-space:normal}}
+/* Layout: use more of a laptop screen; stack the side panel under the chat on tablets */
+.wrap{max-width:1320px}
+@media (max-width:1180px){.ask{grid-template-columns:minmax(0,1fr)}}
+
+/* AI answer tables: a readable "Why it fits" column on laptops and tablets */
+.msg.bot .body table th,.msg.bot .body table td{padding:8px 10px;vertical-align:top}
+.msg.bot .body table td:first-child{min-width:9em}
+.msg.bot .body table td:last-child{min-width:12em}
+.msg.bot .body table td:nth-child(3){white-space:nowrap}
+
+/* Phones and small tablets: each school becomes a small card with labelled lines instead of a squeezed table */
+@media (max-width:820px){
+  .msg.bot .body .sort-hint{display:none}
+  .msg.bot .body .tablewrap{overflow:visible}
+  .msg.bot .body table,.msg.bot .body tbody,.msg.bot .body tr,.msg.bot .body td{display:block;width:100%}
+  .msg.bot .body thead{display:none}
+  .msg.bot .body tr{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:0 0 10px;background:var(--surface)}
+  .msg.bot .body td{border:0;padding:3px 0;min-width:0!important;white-space:normal!important}
+  .msg.bot .body td::before{content:attr(data-label);display:block;font:600 .68rem var(--font-data);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .msg.bot .body td:first-child{font-weight:600}
+  .msg.bot .body td:first-child::before{display:none}
+}
+@media (min-width:560px) and (max-width:820px){
+  .msg.bot .body tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .msg.bot .body tr{margin:0}
+}
 </style>
 </head>
 <body>
@@ -534,9 +556,24 @@ $("#askCmp").onclick=()=>{
 
 /* ---------- chat ---------- */
 let turns=[], ctl=null, sampleFn=null;
+// A table ends at the first line that isn't a table row, even if the AI forgot the blank line after it
+// (otherwise Markdown swallows the next paragraph into the table as an extra row).
+function endTables(text){
+  const out=[]; let inTable=false;
+  for(const line of String(text).split("\n")){
+    const row=/^\s*\|/.test(line);
+    if(inTable && !row && line.trim()) out.push("");
+    inTable=row; out.push(line);
+  }
+  return out.join("\n");
+}
 function md(text){
-  const html=DOMPurify.sanitize(marked.parse(text));
-  return html.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
+  const html=DOMPurify.sanitize(marked.parse(endTables(text)));
+  const box=document.createElement("div"); box.innerHTML=html;
+  // Phones show each table row as a small card, so every cell carries its column name
+  box.querySelectorAll("table").forEach(t=>{ const heads=[...t.querySelectorAll("thead th")].map(th=>th.textContent.trim());
+    t.querySelectorAll("tbody tr").forEach(tr=>[...tr.cells].forEach((td,i)=>td.setAttribute("data-label",heads[i]||""))); });
+  return box.innerHTML.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
              .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
 }
 const ANSWER_NOTE='<p class="answer-note">Information only. Fees are KHDA-approved tuition and exclude extras such as transport and uniforms; confirm the final amount with the school.</p>';

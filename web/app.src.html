@@ -318,9 +318,24 @@ $("#askCmp").onclick=()=>{
 
 /* ---------- chat ---------- */
 let turns=[], ctl=null, sampleFn=null;
+// A table ends at the first line that isn't a table row, even if the AI forgot the blank line after it
+// (otherwise Markdown swallows the next paragraph into the table as an extra row).
+function endTables(text){
+  const out=[]; let inTable=false;
+  for(const line of String(text).split("\n")){
+    const row=/^\s*\|/.test(line);
+    if(inTable && !row && line.trim()) out.push("");
+    inTable=row; out.push(line);
+  }
+  return out.join("\n");
+}
 function md(text){
-  const html=DOMPurify.sanitize(marked.parse(text));
-  return html.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
+  const html=DOMPurify.sanitize(marked.parse(endTables(text)));
+  const box=document.createElement("div"); box.innerHTML=html;
+  // Phones show each table row as a small card, so every cell carries its column name
+  box.querySelectorAll("table").forEach(t=>{ const heads=[...t.querySelectorAll("thead th")].map(th=>th.textContent.trim());
+    t.querySelectorAll("tbody tr").forEach(tr=>[...tr.cells].forEach((td,i)=>td.setAttribute("data-label",heads[i]||""))); });
+  return box.innerHTML.replace(/<table/g,'<div class="tablewrap"><table').replace(/<\/table>/g,'</table></div>')
              .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
 }
 const ANSWER_NOTE='<p class="answer-note">Information only. Fees are KHDA-approved tuition and exclude extras such as transport and uniforms; confirm the final amount with the school.</p>';
