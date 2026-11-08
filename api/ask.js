@@ -22,7 +22,8 @@ export default async function handler(req, res) {
 
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = {}; } }
-  if (!(await turnstileOk(body?.ts, ip))) return res.status(403).json({ error: "We couldn't confirm you're a person. Refresh the page and ask again." });
+  // Bot check: a failed check never blocks a person; it only means no AI answer (the search table instead)
+  const verified = await turnstileOk(body?.ts, ip);
   const question = clip(body?.question, 500).trim();
   if (!question) return res.status(400).json({ error: "Type a question first." });
 
@@ -47,6 +48,8 @@ export default async function handler(req, res) {
   if (clarify) return finish(clarify, "rules", none);
   const key = !history.length && cacheKey(question), hit = key && cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return finish(hit.answer, "cache");
+
+  if (!verified) return finish(searchOnlyAnswer(hits, needs, "check"), "search:unverified");
 
   // 2. Daily caps (per visitor and site-wide): over a cap, the search table instead of the AI
   const used = await countAiCall(ip), cap = caps();

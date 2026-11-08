@@ -195,7 +195,7 @@ export function needsClarifying(needs, schools) {
 }
 
 // Used when every AI model is busy: the search engine's own ranked table, with real fees and distances.
-export function searchOnlyAnswer(hits, needs) {
+export function searchOnlyAnswer(hits, needs, why = "busy") {
   const rows = hits.slice(0, 6).map(({ s, km: d }) => {
     const gf = gradeFee(s, needs.grade);
     const fee = s.fee_min_aed == null ? "not on file" : needs.grade != null && s.fees_by_grade
@@ -203,7 +203,11 @@ export function searchOnlyAnswer(hits, needs) {
     const yr = s.rating_year ? ` (${String(s.rating_year).slice(0, 4)})` : "";
     return `| ${s.name} [${s.id}] | ${s.khda_rating}${yr} | ${fee} | ${s.area}${d != null ? ` · ${d} km` : ""} | ${s.curriculum} |`;
   });
-  return `Our AI assistant is very busy right now, so here are the **best matches from our search**, ranked by fit:\n\n` +
+  const intro = why === "check"
+    ? "We couldn't run our quick bot check in this browser, so here are the **best matches from our search** without the AI write-up, ranked by fit:"
+    : "Our AI assistant is very busy right now, so here are the **best matches from our search**, ranked by fit:";
+  return `${intro}\n\n` +
     `| School | KHDA rating | Annual fee | Area / distance | Curriculum |\n|---|---|---|---|---|\n${rows.join("\n")}\n\n` +
-    `Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.`;
+    (why === "check" ? "Tap a record ID to open the school's card. Refreshing the page usually brings the AI answers back."
+      : "Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.");
 }
