@@ -182,6 +182,11 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .foot-links{display:flex;gap:14px}
 .foot-links a{color:var(--accent);font-weight:600;text-decoration:none}
 .foot-links a:hover{text-decoration:underline}
+
+.vote{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:.82rem;color:var(--muted)}
+.vote button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 10px;cursor:pointer;font-size:.95rem}
+.vote button:hover{border-color:var(--accent)}
+.ts:empty{display:none}.ts{margin:6px 0}
 </style>
 <header><div class="wrap">
   <a class="brand" href="#ask" aria-label="UAE School Fees home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>UAE School Fees</span><small>Dubai</small><span class="ai-pill">AI</span></a>
@@ -245,6 +250,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
     <div class="ask">
       <div class="panel" style="display:flex;flex-direction:column;min-width:0">
         <div class="thread" id="thread" aria-live="polite"></div>
+        <div id="ts" class="ts"></div>
         <form class="composer" id="composer">
           <textarea id="q" rows="2" placeholder="e.g. CBSE school near Dubai Sports City, under AED 20,000, for KG1" aria-label="Your question"></textarea>
           <div style="display:flex;flex-direction:column;gap:6px">
@@ -510,6 +516,44 @@ function radiusNote(n) {
     (n.inRadius === 0 ? " None are inside it; say so and suggest a larger radius." : "") + "\n\n";
 }
 
+// ---------- answers that need no AI ----------
+const OTHER_EMIRATES = [["abu dhabi", "Abu Dhabi"], ["al ain", "Al Ain"], ["sharjah", "Sharjah"], ["ajman", "Ajman"],
+  ["ras al khaimah", "Ras Al Khaimah"], ["rak", "Ras Al Khaimah"], ["fujairah", "Fujairah"], ["umm al quwain", "Umm Al Quwain"], ["uaq", "Umm Al Quwain"]];
+
+// An emirate other than Dubai is named and no Dubai place is: we can't help with AI, so answer directly.
+function otherEmirate(question, needs) {
+  const t = " " + String(question).toLowerCase().replace(/[^a-z ]+/g, " ") + " ";
+  const hit = OTHER_EMIRATES.find(([w]) => t.includes(` ${w} `));
+  if (!hit || needs.place) return null;
+  const nearBorder = ["Sharjah", "Ajman", "Umm Al Quwain"].includes(hit[1]);
+  return `We only cover **Dubai's private schools** for now, so we can't show schools in ${hit[1]} yet. Other emirates are planned once official data is available.\n\n` +
+    (nearBorder
+      ? `If you live in ${hit[1]} and can travel into Dubai, try a Dubai area close to the border, for example: *"CBSE school near Al Qusais for KG1 under 20,000"*, or Al Nahda, Muhaisnah or Mirdif.`
+      : `If you're open to a school in Dubai, tell me the Dubai area, curriculum, your child's grade and your budget.`);
+}
+
+// Nothing to rank on yet (no budget, curriculum, grade, rating, place, distance, or school name): ask instead of calling the AI.
+function needsClarifying(needs, schools) {
+  if (["budget", "curriculum", "minRating", "place", "grade", "maxKm"].some(k => needs[k] !== undefined)) return null;
+  const names = schools.map(s => s.name.toLowerCase());
+  if (needs.terms.some(w => names.some(n => n.includes(w)))) return null;
+  return `Happy to help. To find the right schools, tell me:\n\n1. **Your child's grade** next year (e.g. KG1, Grade 3, Year 7)\n2. **Curriculum** (British, CBSE, IB, American, French…)\n3. **Budget** per year in AED\n4. **Where you live** in Dubai (or a distance, e.g. "within 5 km of Mirdif")\n\nFor example: *"CBSE school near Al Qusais for KG1 under AED 20,000"*.`;
+}
+
+// Used when every AI model is busy: the search engine's own ranked table, with real fees and distances.
+function searchOnlyAnswer(hits, needs) {
+  const rows = hits.slice(0, 6).map(({ s, km: d }) => {
+    const gf = gradeFee(s, needs.grade);
+    const fee = s.fee_min_aed == null ? "not on file" : needs.grade != null && s.fees_by_grade
+      ? (gf != null ? `${fmtAed(gf)} (${STEPS[needs.grade]})` : "grade not offered") : `${fmtAed(s.fee_min_aed)} – ${fmtAed(s.fee_max_aed)}`;
+    const yr = s.rating_year ? ` (${String(s.rating_year).slice(0, 4)})` : "";
+    return `| ${s.name} [${s.id}] | ${s.khda_rating}${yr} | ${fee} | ${s.area}${d != null ? ` · ${d} km` : ""} | ${s.curriculum} |`;
+  });
+  return `Our AI assistant is very busy right now, so here are the **best matches from our search**, ranked by fit:\n\n` +
+    `| School | KHDA rating | Annual fee | Area / distance | Curriculum |\n|---|---|---|---|---|\n${rows.join("\n")}\n\n` +
+    `Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.`;
+}
+
 const RULES = `You are the UAE School Fees assistant (uaeschoolfees.com). You help parents shortlist private schools. Today you cover Dubai only.
 If the parent asks about a school or area in another emirate (Abu Dhabi, Sharjah, Ajman, Ras Al Khaimah, Fujairah, Umm Al Quwain), say plainly in one sentence that only Dubai is covered for now and other emirates are planned (no date); then offer Dubai options only if they fit (e.g. Dubai schools near the Sharjah border for a Sharjah resident). Never present a Dubai school as being in another emirate.
 Each user turn contains the parent's question and a set of RETRIEVED SCHOOL RECORDS from KHDA's official register.
@@ -687,6 +731,10 @@ function md(text){
              .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
 }
 const ANSWER_NOTE='<p class="answer-note">Information only. Fees are KHDA-approved tuition and exclude extras such as transport and uniforms; confirm the final amount with the school.</p>';
+const feedbackHtml=id=>`<div class="vote" data-log="${esc(id)}"><span>Was this helpful?</span><button type="button" data-vote="1" aria-label="Helpful">👍</button><button type="button" data-vote="-1" aria-label="Not helpful">👎</button></div>`;
+document.addEventListener("click",e=>{ const b=e.target.closest?.(".vote button"); if(!b) return; const box=b.closest(".vote");
+  fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:box.dataset.log,vote:+b.dataset.vote})}).catch(()=>{});
+  box.innerHTML=`<span>Thanks for the feedback.</span>`; });
 const AVATAR='<span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.1 6.1 2.4-6.1 2.4L12 19.5l-2.4-6.1-6.1-2.4 6.1-2.4z" fill="currentColor"/><path d="M19 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" opacity=".7"/></svg></span>';
 function bubble(role,html){
   const d=document.createElement("div"); d.className="msg "+role;
@@ -697,8 +745,21 @@ const SAMPLE_ERR={not_granted:"Claude isn't allowed for this page. Allow it from
   rate_limited:"Too many questions in a short time. Wait a minute, then ask again.",
   session_expired:"Your session has expired. Sign in again, then ask.", refused:"The AI couldn't answer that. Try rephrasing the question."};
 
+/* ---------- bot check (Cloudflare Turnstile, invisible; on only when the site owner configures it) ---------- */
+let CFG={turnstileSiteKey:null,feedback:false}, tsWidget=null, tsResolve=null;
+const cfgReady = MODE==="web" ? fetch("/api/config").then(r=>r.json()).then(c=>{CFG=c}).catch(()=>{}) : Promise.resolve();
+function loadTurnstile(){ return window.turnstile ? Promise.resolve() : new Promise((ok,bad)=>{const sc=document.createElement("script");
+  sc.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; sc.async=true; sc.onload=ok; sc.onerror=bad; document.head.append(sc);}); }
+async function botToken(){
+  await cfgReady; if(!CFG.turnstileSiteKey) return null;
+  try{ await loadTurnstile(); }catch{ return null; }
+  if(tsWidget==null) tsWidget=turnstile.render("#ts",{sitekey:CFG.turnstileSiteKey,appearance:"interaction-only",execution:"execute",
+    callback:t=>tsResolve?.(t),"error-callback":()=>tsResolve?.(null),"expired-callback":()=>turnstile.reset(tsWidget)});
+  return new Promise(r=>{ const t=setTimeout(()=>r(null),10000); tsResolve=v=>{clearTimeout(t);r(v)}; turnstile.reset(tsWidget); turnstile.execute(tsWidget); });
+}
 async function answerWeb(q, signal, onText){
-  const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},signal,body:JSON.stringify({question:q,history:turns})});
+  const ts=await botToken();
+  const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},signal,body:JSON.stringify({question:q,history:turns,ts})});
   const data=await r.json().catch(()=>({error:"The server sent an unreadable reply."}));
   if(!r.ok) { const e=new Error(data.error||"Something went wrong. Ask again in a moment."); e.retrieved=data.retrieved; throw e; }
   return data;
@@ -726,7 +787,7 @@ async function ask(q){
   try{
     const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade,meta.maxKm); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
     showMeta(data.retrieved,data.place,data.grade,data.maxKm);
-    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE;
+    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE+(data.logId&&CFG.feedback?feedbackHtml(data.logId):"");
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
   }catch(e){

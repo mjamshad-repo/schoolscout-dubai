@@ -1,68 +1,67 @@
-// POST /api/ask  { question: string, history?: [{role, content}] }
-//   -> { answer: markdown, retrieved: ["SCH001", ...], provider }
-// The API key never leaves the server. Retrieval runs here, so the browser cannot send its own prompt.
+// POST /api/ask  { question, history?, ts? }  ->  { answer (markdown), retrieved, place, grade, maxKm, provider, logId }
+// The AI keys never leave the server, and retrieval runs here, so the browser cannot send its own prompt.
+// Order: guards -> rule answers (no AI) -> cache -> daily caps -> AI with fallbacks -> search table if all are busy.
 import { SCHOOLS } from "./_schools.js";
-import { parseNeeds as parseNeedsOnly, retrieve, recordText, radiusNote, otherEmirate, needsClarifying, searchOnlyAnswer } from "./_retrieval.js";
+import { parseNeeds, retrieve, recordText, radiusNote, otherEmirate, needsClarifying, searchOnlyAnswer } from "./_retrieval.js";
 import { RULES } from "./_prompt.js";
-import { complete, ProviderError } from "./_llm.js";
-
-const LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN || 8);
-const seen = new Map(); // ip -> timestamps (best effort: per server instance)
-
-function rateLimited(ip) {
-  const now = Date.now(), recent = (seen.get(ip) || []).filter(t => now - t < 60_000);
-  recent.push(now); seen.set(ip, recent);
-  if (seen.size > 5000) seen.clear();
-  return recent.length > LIMIT_PER_MIN;
-}
+import { complete } from "./_llm.js";
+import { clientIp, originAllowed, turnstileOk, tooFast, caps } from "./_guard.js";
+import { countAiCall, logAsk } from "./_store.js";
 
 const clip = (s, n) => String(s ?? "").slice(0, n);
-
 // Same first question within 30 minutes (e.g. the "Try asking" buttons): reuse the answer, no AI call
 const cache = new Map(), CACHE_MS = 30 * 60_000;
 const cacheKey = q => q.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 export default async function handler(req, res) {
+  const started = Date.now();
   if (req.method !== "POST") return res.status(405).json({ error: "Use POST." });
-  const ip = String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "?").split(",")[0].trim();
-  if (rateLimited(ip)) return res.status(429).json({ error: "Too many questions in a minute. Wait a moment, then ask again." });
+  if (!originAllowed(req)) return res.status(403).json({ error: "This service only answers questions from uaeschoolfees.com." });
+  const ip = clientIp(req);
+  if (tooFast(ip)) return res.status(429).json({ error: "Too many questions in a minute. Wait a moment, then ask again." });
 
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = {}; } }
+  if (!(await turnstileOk(body?.ts, ip))) return res.status(403).json({ error: "We couldn't confirm you're a person. Refresh the page and ask again." });
   const question = clip(body?.question, 500).trim();
   if (!question) return res.status(400).json({ error: "Type a question first." });
 
-  // Earlier turns: keep the last 4, plain text only, user questions without their records.
+  // Earlier turns: keep the last 4, plain text only.
   const history = (Array.isArray(body?.history) ? body.history : [])
     .filter(t => t && (t.role === "user" || t.role === "assistant") && typeof t.content === "string")
     .slice(-4).map(t => ({ role: t.role, content: clip(t.content, 2500) }));
   while (history.length && history[0].role !== "user") history.shift();
 
-  const previousQuestions = history.filter(t => t.role === "user").map(t => t.content);
-  const { hits, needs } = retrieve(SCHOOLS, question, previousQuestions);
-  const placeLabel = needs.place?.label || "";
-  const records = hits.map(h => recordText(h.s, h.km, placeLabel, needs.grade ?? null)).join("\n\n");
-  const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
-
+  const { hits, needs } = retrieve(SCHOOLS, question, history.filter(t => t.role === "user").map(t => t.content));
   const meta = { retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, grade: needs.grade ?? null, maxKm: needs.place ? needs.maxKm ?? null : null };
-  const send = (answer, provider) => res.status(200).json({ answer, ...meta, provider });
+  const finish = async (answer, provider, m = meta) => {
+    const logId = await logAsk({ question, answer, provider, ...m, ms: Date.now() - started, turn: history.filter(t => t.role === "user").length + 1 });
+    res.status(200).json({ answer, ...m, provider, logId });
+  };
+  const none = { retrieved: [], place: null, grade: null, maxKm: null };
 
   // 1. Answers that need no AI
-  const other = otherEmirate(question, parseNeedsOnly(question, SCHOOLS));
-  if (other) return res.status(200).json({ answer: other, retrieved: [], place: null, grade: null, maxKm: null, provider: "rules" });
+  const other = otherEmirate(question, parseNeeds(question, SCHOOLS));
+  if (other) return finish(other, "rules", none);
   const clarify = needsClarifying(needs, SCHOOLS);
-  if (clarify) return res.status(200).json({ answer: clarify, retrieved: [], place: null, grade: null, maxKm: null, provider: "rules" });
+  if (clarify) return finish(clarify, "rules", none);
   const key = !history.length && cacheKey(question), hit = key && cache.get(key);
-  if (hit && Date.now() - hit.at < CACHE_MS) return send(hit.answer, "cache");
+  if (hit && Date.now() - hit.at < CACHE_MS) return finish(hit.answer, "cache");
 
-  // 2. The AI, with fallbacks; 3. if every model is busy, the search engine's own table
+  // 2. Daily caps (per visitor and site-wide): over a cap, the search table instead of the AI
+  const used = await countAiCall(ip), cap = caps();
+  if (used && (used.visitor > cap.visitor || used.all > cap.all)) return finish(searchOnlyAnswer(hits, needs), used.all > cap.all ? "search:site-cap" : "search:visitor-cap");
+
+  // 3. The AI, with fallbacks; 4. if every model is busy, the search engine's own table
+  const records = hits.map(h => recordText(h.s, h.km, needs.place?.label || "", needs.grade ?? null)).join("\n\n");
+  const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
   try {
     const { text, model } = await complete(RULES, turns);
     if (key) { cache.set(key, { answer: text, at: Date.now() }); if (cache.size > 300) cache.delete(cache.keys().next().value); }
-    send(text, model);
+    return finish(text, model);
   } catch (e) {
     console.error("ask failed:", e.message, e.cause?.message || "");
-    if (hits.length) return send(searchOnlyAnswer(hits, needs), "search");
-    res.status(e instanceof ProviderError ? e.status : 500).json({ error: "Something went wrong. Try again in a moment.", ...meta });
+    if (hits.length) return finish(searchOnlyAnswer(hits, needs), "search:busy");
+    res.status(503).json({ error: "Something went wrong. Try again in a moment.", ...meta });
   }
 }

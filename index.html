@@ -194,6 +194,11 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .foot-links{display:flex;gap:14px}
 .foot-links a{color:var(--accent);font-weight:600;text-decoration:none}
 .foot-links a:hover{text-decoration:underline}
+
+.vote{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:.82rem;color:var(--muted)}
+.vote button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 10px;cursor:pointer;font-size:.95rem}
+.vote button:hover{border-color:var(--accent)}
+.ts:empty{display:none}.ts{margin:6px 0}
 </style>
 </head>
 <body>
@@ -259,6 +264,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
     <div class="ask">
       <div class="panel" style="display:flex;flex-direction:column;min-width:0">
         <div class="thread" id="thread" aria-live="polite"></div>
+        <div id="ts" class="ts"></div>
         <form class="composer" id="composer">
           <textarea id="q" rows="2" placeholder="e.g. CBSE school near Dubai Sports City, under AED 20,000, for KG1" aria-label="Your question"></textarea>
           <div style="display:flex;flex-direction:column;gap:6px">
@@ -502,6 +508,10 @@ function md(text){
              .replace(/\[(SCH\d{3})\]/g,'<button class="rid" type="button" data-rid="$1">$1</button>');
 }
 const ANSWER_NOTE='<p class="answer-note">Information only. Fees are KHDA-approved tuition and exclude extras such as transport and uniforms; confirm the final amount with the school.</p>';
+const feedbackHtml=id=>`<div class="vote" data-log="${esc(id)}"><span>Was this helpful?</span><button type="button" data-vote="1" aria-label="Helpful">👍</button><button type="button" data-vote="-1" aria-label="Not helpful">👎</button></div>`;
+document.addEventListener("click",e=>{ const b=e.target.closest?.(".vote button"); if(!b) return; const box=b.closest(".vote");
+  fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:box.dataset.log,vote:+b.dataset.vote})}).catch(()=>{});
+  box.innerHTML=`<span>Thanks for the feedback.</span>`; });
 const AVATAR='<span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.1 6.1 2.4-6.1 2.4L12 19.5l-2.4-6.1-6.1-2.4 6.1-2.4z" fill="currentColor"/><path d="M19 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" opacity=".7"/></svg></span>';
 function bubble(role,html){
   const d=document.createElement("div"); d.className="msg "+role;
@@ -512,8 +522,21 @@ const SAMPLE_ERR={not_granted:"Claude isn't allowed for this page. Allow it from
   rate_limited:"Too many questions in a short time. Wait a minute, then ask again.",
   session_expired:"Your session has expired. Sign in again, then ask.", refused:"The AI couldn't answer that. Try rephrasing the question."};
 
+/* ---------- bot check (Cloudflare Turnstile, invisible; on only when the site owner configures it) ---------- */
+let CFG={turnstileSiteKey:null,feedback:false}, tsWidget=null, tsResolve=null;
+const cfgReady = MODE==="web" ? fetch("/api/config").then(r=>r.json()).then(c=>{CFG=c}).catch(()=>{}) : Promise.resolve();
+function loadTurnstile(){ return window.turnstile ? Promise.resolve() : new Promise((ok,bad)=>{const sc=document.createElement("script");
+  sc.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; sc.async=true; sc.onload=ok; sc.onerror=bad; document.head.append(sc);}); }
+async function botToken(){
+  await cfgReady; if(!CFG.turnstileSiteKey) return null;
+  try{ await loadTurnstile(); }catch{ return null; }
+  if(tsWidget==null) tsWidget=turnstile.render("#ts",{sitekey:CFG.turnstileSiteKey,appearance:"interaction-only",execution:"execute",
+    callback:t=>tsResolve?.(t),"error-callback":()=>tsResolve?.(null),"expired-callback":()=>turnstile.reset(tsWidget)});
+  return new Promise(r=>{ const t=setTimeout(()=>r(null),10000); tsResolve=v=>{clearTimeout(t);r(v)}; turnstile.reset(tsWidget); turnstile.execute(tsWidget); });
+}
 async function answerWeb(q, signal, onText){
-  const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},signal,body:JSON.stringify({question:q,history:turns})});
+  const ts=await botToken();
+  const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},signal,body:JSON.stringify({question:q,history:turns,ts})});
   const data=await r.json().catch(()=>({error:"The server sent an unreadable reply."}));
   if(!r.ok) { const e=new Error(data.error||"Something went wrong. Ask again in a moment."); e.retrieved=data.retrieved; throw e; }
   return data;
@@ -541,7 +564,7 @@ async function ask(q){
   try{
     const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade,meta.maxKm); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
     showMeta(data.retrieved,data.place,data.grade,data.maxKm);
-    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE;
+    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE+(data.logId&&CFG.feedback?feedbackHtml(data.logId):"");
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
   }catch(e){

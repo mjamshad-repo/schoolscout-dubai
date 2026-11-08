@@ -10,7 +10,7 @@ globalThis.fetch = async (url, opts) => {
 const { default: handler } = await import("../api/ask.js");
 const ask = (question, history = [], ip = String(Math.random())) => new Promise(done => {
   const res = { code: 0, status(c) { this.code = c; return this; }, json(b) { done({ code: this.code, ...b }); } };
-  handler({ method: "POST", headers: { "x-forwarded-for": ip }, body: { question, history } }, res);
+  handler({ method: "POST", headers: { "x-forwarded-for": ip, origin: "https://www.uaeschoolfees.com" }, body: { question, history } }, res);
 });
 let fail = 0; const check = (name, ok, extra = "") => { if (!ok) fail++; console.log(`${ok ? "PASS" : "FAIL"}  ${name} ${extra}`); };
 
@@ -44,5 +44,14 @@ globalThis.fetch = prev;
 
 behaviour = () => ({ status: 503, body: { error: { message: "overloaded" } } });
 r = await ask("French school near Oud Metha under 60000");
-check("everything busy -> search table, still 200", r.code === 200 && r.provider === "search" && /\| School \|/.test(r.answer) && /SCH\d{3}/.test(r.answer));
+check("everything busy -> search table, still 200", r.code === 200 && r.provider === "search:busy" && /\| School \|/.test(r.answer) && /SCH\d{3}/.test(r.answer));
+behaviour = () => ({ status: 200, body: { candidates: [{ content: { parts: [{ text: "OK" }] } }] } });
+r = await new Promise(done => { const res = { code: 0, status(c) { this.code = c; return this; }, json(b) { done({ code: this.code, ...b }); } };
+  handler({ method: "POST", headers: { "x-forwarded-for": "9.9.9.9", origin: "https://evil.example" }, body: { question: "IB school near Emirates Hills" } }, res); });
+check("other website calling the API -> blocked", r.code === 403);
+r = await new Promise(done => { const res = { code: 0, status(c) { this.code = c; return this; }, json(b) { done({ code: this.code, ...b }); } };
+  handler({ method: "POST", headers: { "x-forwarded-for": "9.9.9.8" }, body: { question: "IB school near Emirates Hills" } }, res); });
+check("script with no origin -> blocked", r.code === 403);
+let n429 = 0; for (let i = 0; i < 10; i++) { const x = await ask(`British school near Mirdif ${i}`, [], "7.7.7.7"); if (x.code === 429) n429++; }
+check("more than 8 a minute from one visitor -> 429", n429 === 2, `${n429} blocked`);
 console.log(fail ? `\n${fail} failing` : "\nall ask checks pass"); process.exit(fail ? 1 : 0);

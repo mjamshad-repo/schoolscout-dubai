@@ -12,6 +12,6 @@
     "dev:mock": "AI_PROVIDER=mock node scripts/dev.mjs",
     "data": "python3 scripts/build-data.py",
     "web": "python3 scripts/build-web.py",
-    "test": "node scripts/test.mjs && node scripts/test-ask.mjs"
+    "test": "node scripts/test.mjs && node scripts/test-ask.mjs && node scripts/test-store.mjs"
   }
 }
