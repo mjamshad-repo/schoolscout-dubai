@@ -2,7 +2,7 @@
 //   -> { answer: markdown, retrieved: ["SCH001", ...], provider }
 // The API key never leaves the server. Retrieval runs here, so the browser cannot send its own prompt.
 import { SCHOOLS } from "./_schools.js";
-import { retrieve, recordText } from "./_retrieval.js";
+import { retrieve, recordText, radiusNote } from "./_retrieval.js";
 import { RULES } from "./_prompt.js";
 import { complete, providerName, ProviderError } from "./_llm.js";
 
@@ -38,11 +38,11 @@ export default async function handler(req, res) {
   const { hits, needs } = retrieve(SCHOOLS, question, previousQuestions);
   const placeLabel = needs.place?.label || "";
   const records = hits.map(h => recordText(h.s, h.km, placeLabel, needs.grade ?? null)).join("\n\n");
-  const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\nRETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
+  const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
 
   try {
     const answer = await complete(RULES, turns);
-    res.status(200).json({ answer, retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, grade: needs.grade ?? null, provider: providerName() });
+    res.status(200).json({ answer, retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, grade: needs.grade ?? null, maxKm: needs.place ? needs.maxKm ?? null : null, provider: providerName() });
   } catch (e) {
     const status = e instanceof ProviderError ? e.status : 500;
     console.error("ask failed:", e.message);

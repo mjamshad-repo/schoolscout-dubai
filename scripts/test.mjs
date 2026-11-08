@@ -18,6 +18,9 @@ const cases = [
   { q: "French school near Oud Metha", check: h => h[0].s.curriculum.includes("French") && h[0].km < 3 },
   { q: "British secondary school for Year 10 near Al Barsha under 60000", check: (h, n) => n.grade === 12 && h.slice(0, 5).every(x => x.s.fees_by_grade?.[12] != null) },
   { q: "CBSE school near Sports City for KG1 under 20000", check: (h, n) => n.grade === 2 && h.slice(0, 3).every(x => x.s.fees_by_grade?.[2] != null && x.s.fees_by_grade[2] <= 20000) },
+  { q: "CBSE school within 10 km of Sports City", check: (h, n) => n.maxKm === 10 && n.budget === undefined && h.length > 0 && h.every(x => x.km != null && x.km <= 10) },
+  { q: "British school 5km from Al Barsha under 50000", check: (h, n) => n.maxKm === 5 && n.budget === 50000 && h.every(x => x.km <= 5) },
+  { q: "schools within 3 km", check: (h, n) => n.maxKm === 3 && !n.place },
 ];
 
 let fail = 0;

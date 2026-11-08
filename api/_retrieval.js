@@ -89,7 +89,10 @@ export function parseGrade(t) {
 export const gradeFee = (s, g) => (g == null || !s.fees_by_grade) ? null : s.fees_by_grade[g];
 
 export function parseNeeds(q, schools = []) {
-  const t = String(q).toLowerCase(), n = {};
+  let t = String(q).toLowerCase(); const n = {};
+  // Radius first ("within 10 km", "5km", "less than 3 kilometres"), then remove it so it is never read as a budget
+  const r = t.match(/(?:(?:within|under|below|less than|up to|upto|max(?:imum)?|inside|around|about|in)\s+(?:a\s+)?)?(\d+(?:\.\d+)?)\s*(?:km|kms|kilomet(?:er|re)s?)\b/);
+  if (r) { const v = parseFloat(r[1]); if (v > 0 && v <= 60) n.maxKm = v; t = t.replace(r[0], " "); }
   const g = parseGrade(t); if (g !== undefined) n.grade = g;
   const m = t.match(/(?:under|below|less than|up to|upto|max(?:imum)?|within|budget(?: of| is)?|around|about)\s*(?:aed|dh|dhs)?\.?\s*([\d.,]+)\s*(k|,000|000)?/);
   if (m) { let v = parseFloat(m[1].replace(/,/g, "")); if (m[2] === "k" || v < 1000) v *= 1000; n.budget = v; }
@@ -130,11 +133,14 @@ function score(s, n) {
 export function retrieve(schools, question, previous = [], k = 10) {
   const n = { terms: [] };
   for (const p of [...previous.slice(-2).map(q => parseNeeds(q, schools)), parseNeeds(question, schools)]) {
-    for (const key of ["budget", "curriculum", "minRating", "place", "grade"]) if (p[key] !== undefined) n[key] = p[key];
+    for (const key of ["budget", "curriculum", "minRating", "place", "grade", "maxKm"]) if (p[key] !== undefined) n[key] = p[key];
     n.terms.push(...p.terms);
   }
-  const hits = schools.map(s => ({ s, score: score(s, n), km: n.place && typeof s.lat === "number" ? Math.round(km(n.place, s) * 10) / 10 : null }))
-    .sort((a, b) => b.score - a.score).slice(0, k);
+  let pool = schools.map(s => ({ s, score: score(s, n), km: n.place && typeof s.lat === "number" ? Math.round(km(n.place, s) * 10) / 10 : null }));
+  // A radius only applies once we know the place; schools without a map point cannot be shown as inside it
+  if (n.maxKm && n.place) pool = pool.filter(h => h.km != null && h.km <= n.maxKm);
+  const hits = pool.sort((a, b) => b.score - a.score).slice(0, k);
+  n.inRadius = n.maxKm && n.place ? pool.length : undefined;
   return { needs: n, hits };
 }
 
@@ -154,4 +160,12 @@ Curriculum: ${s.curriculum} | KHDA rating: ${s.khda_rating}${s.rating_year ? ` (
 ${fee}
 Area: ${s.area}${distKm != null ? ` | Straight-line distance from ${placeLabel}: about ${distKm} km` : ""} | Grades offered: ${s.grades}
 Website: ${s.website || "not listed"} | Phone: ${s.phone || "not listed"}${s.notes ? "\nNote: " + s.notes : ""}`;
+}
+
+// Tells the AI about a requested radius, so it neither invents schools nor ignores the limit
+export function radiusNote(n) {
+  if (!n.maxKm) return "";
+  if (!n.place) return `SEARCH NOTE: The parent asked for schools within ${n.maxKm} km but did not say from where. Ask which area or landmark to measure from.\n\n`;
+  return `SEARCH NOTE: Only schools within ${n.maxKm} km (straight line) of ${n.place.label} were retrieved: ${n.inRadius} school(s) in that radius in total.` +
+    (n.inRadius === 0 ? " None are inside it; say so and suggest a larger radius." : "") + "\n\n";
 }

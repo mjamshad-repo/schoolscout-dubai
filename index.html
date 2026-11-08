@@ -288,15 +288,16 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
   <!-- EXPLORE -->
   <section id="view-explore" hidden>
     <h1>Explore schools</h1>
-    <p class="lede">Every KHDA-registered private school in Dubai. Filter, sort by distance, and tick up to three to compare.</p>
+    <p class="lede">Every KHDA-registered private school in Dubai. Pick your area and a distance, filter by curriculum, grade and fee, and tick up to three to compare.</p>
     <div class="panel filters">
-      <label><span class="label">Curriculum</span><select id="fCur"><option value="">All</option></select></label>
-      <label><span class="label">KHDA rating (min)</span>
-        <select id="fRat"><option value="0">Any</option><option value="3">Good or better</option><option value="4">Very Good or better</option><option value="5">Outstanding</option></select></label>
       <label><span class="label">Near</span><select id="fNear"><option value="">Anywhere</option></select></label>
+      <label><span class="label">Within</span><select id="fKm" disabled title="Choose an area under Near first"><option value="">Any distance</option><option value="2">2 km</option><option value="5">5 km</option><option value="10">10 km</option><option value="15">15 km</option><option value="20">20 km</option></select></label>
+      <label><span class="label">Curriculum</span><select id="fCur"><option value="">All</option></select></label>
       <label><span class="label">Grade</span><select id="fGrade"><option value="">Any grade</option></select></label>
       <label><span class="label">Fee up to</span>
         <select id="fFee"><option value="">Any</option><option value="15000">AED 15,000</option><option value="25000">AED 25,000</option><option value="45000">AED 45,000</option><option value="60000">AED 60,000</option><option value="200000">Any, fee on file only</option></select></label>
+      <label><span class="label">KHDA rating (min)</span>
+        <select id="fRat"><option value="0">Any</option><option value="3">Good or better</option><option value="4">Very Good or better</option><option value="5">Outstanding</option></select></label>
       <label><span class="label">Name or area</span><input id="fTxt" type="search" placeholder="e.g. Qusais, GEMS"></label>
       <label class="check"><input id="fNew" type="checkbox"> Include schools not yet inspected</label>
     </div>
@@ -439,17 +440,20 @@ function renderExplore(reset=true){
     (g==null || !s.fees_by_grade || s.fees_by_grade[g]!=null) &&
     (!fee || (()=>{ const f = g!=null && s.fees_by_grade ? s.fees_by_grade[g] : s.fee_min_aed; return f!=null && f<=+fee; })()) &&
     (!t || (s.name+" "+s.area).toLowerCase().includes(t)));
+  const fKm=$("#fKm"); fKm.disabled=!near; if(!near) fKm.value="";
+  const maxKm=near&&fKm.value?+fKm.value:null;
   let withD=list.map(s=>({s,d: near && typeof s.lat==="number" ? kmBetween(near,s) : null}));
+  if(maxKm) withD=withD.filter(x=>x.d!=null&&x.d<=maxKm);
   if(near) withD.sort((a,b)=>(a.d??1e9)-(b.d??1e9));
   else withD.sort((a,b)=>(RATE[b.s.khda_rating]??-1)-(RATE[a.s.khda_rating]??-1) || (b.s.fee_min_aed!=null)-(a.s.fee_min_aed!=null) || a.s.name.localeCompare(b.s.name));
   lastList=withD;
-  $("#count").textContent=`${list.length} of ${SCHOOLS.length} schools${g!=null?` · fees for ${GRADES[g]}`:""}${near?` · sorted by distance from ${near.label}`:""}`;
-  $("#grid").innerHTML=withD.slice(0,shown).map(x=>card(x.s,x.d)).join("")||'<div class="empty">No school matches these filters. Try a lower rating, a higher fee, or include schools not yet inspected.</div>';
+  $("#count").textContent=`${withD.length} of ${SCHOOLS.length} schools${g!=null?` · fees for ${GRADES[g]}`:""}${near?(maxKm?` · within ${maxKm} km of ${near.label}`:` · sorted by distance from ${near.label}`):""}`;
+  $("#grid").innerHTML=withD.slice(0,shown).map(x=>card(x.s,x.d)).join("")||'<div class="empty">No school matches these filters. Try a larger distance, a lower rating, a higher fee, or include schools not yet inspected.</div>';
   $("#moreBtn").hidden = withD.length<=shown;
   $("#moreBtn").textContent=`Show more (${withD.length-shown} left)`;
   renderCmpBar();
 }
-["#fCur","#fRat","#fFee","#fTxt","#fNear","#fNew","#fGrade"].forEach(id=>$(id).addEventListener("input",()=>renderExplore()));
+["#fCur","#fRat","#fFee","#fTxt","#fNear","#fKm","#fNew","#fGrade"].forEach(id=>$(id).addEventListener("input",()=>renderExplore()));
 $("#moreBtn").onclick=()=>{shown+=30; renderExplore(false)};
 $("#grid").addEventListener("change",e=>{
   const id=e.target.dataset.cmp; if(!id) return;
@@ -518,12 +522,12 @@ async function answerArtifact(q, signal, onText){
   if(!sampleFn) throw new Error("AI answers need this page open inside Claude. Explore and Compare still work.");
   const prev=turns.filter(t=>t.role==="user").map(t=>t.content);
   const {hits,needs}=retrieve(SCHOOLS,q,prev);
-  onText(null,{retrieved:hits.map(h=>h.s.id),place:needs.place?.label,grade:needs.grade});
+  onText(null,{retrieved:hits.map(h=>h.s.id),place:needs.place?.label,grade:needs.grade,maxKm:needs.place?needs.maxKm:null});
   const records=hits.map(h=>recordText(h.s,h.km,needs.place?.label||"",needs.grade??null)).join("\n\n");
-  const msgs=[{role:"user",content:RULES},...turns,{role:"user",content:`QUESTION: ${q}\n\nRETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}`}];
+  const msgs=[{role:"user",content:RULES},...turns,{role:"user",content:`QUESTION: ${q}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}`}];
   try{
     const {text}=await sampleFn(msgs,{cache:false,signal,onText:({text})=>onText(text)});
-    return {answer:text,retrieved:hits.map(h=>h.s.id),place:needs.place?.label,grade:needs.grade};
+    return {answer:text,retrieved:hits.map(h=>h.s.id),place:needs.place?.label,grade:needs.grade,maxKm:needs.place?needs.maxKm:null};
   }catch(e){ const err=new Error(e.code==="cancelled"?"Stopped.":(SAMPLE_ERR[e.code]||"Something went wrong reaching Claude. Ask again in a moment.")); err.code=e.code; err.partial=e.text; if(["not_granted","sampling_disabled"].includes(e.code)) sampleFn=null; throw err; }
 }
 
@@ -532,11 +536,11 @@ async function ask(q){
   bubble("user",esc(q));
   const bot=bubble("bot",`<div class="retrieved"></div><div class="placeinfo"></div><div class="body thinking"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span> Searching ${SCHOOLS.length} schools and writing a shortlist…</div>`);
   const body=bot.querySelector(".body"), ret=bot.querySelector(".retrieved"), pinfo=bot.querySelector(".placeinfo");
-  const showMeta=(ids,place,grade)=>{ if(ids?.length) ret.innerHTML=`<span class="label">Retrieved</span>`+ids.map(id=>`<button class="rid" type="button" data-rid="${id}">${id}</button>`).join(""); pinfo.textContent=[grade!=null?`Fees for ${GRADES[grade]}`:"",place?`distances from ${place} (straight line)`:""].filter(Boolean).join(" · "); };
+  const showMeta=(ids,place,grade,maxKm)=>{ if(ids?.length) ret.innerHTML=`<span class="label">Retrieved</span>`+ids.map(id=>`<button class="rid" type="button" data-rid="${id}">${id}</button>`).join(""); pinfo.textContent=[grade!=null?`Fees for ${GRADES[grade]}`:"",place?(maxKm?`within ${maxKm} km of ${place} (straight line)`:`distances from ${place} (straight line)`):""].filter(Boolean).join(" · "); };
   ctl=new AbortController(); $("#send").disabled=true; $("#stop").hidden=false;
   try{
-    const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
-    showMeta(data.retrieved,data.place,data.grade);
+    const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade,meta.maxKm); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
+    showMeta(data.retrieved,data.place,data.grade,data.maxKm);
     body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE;
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
@@ -551,7 +555,7 @@ $("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preven
 $("#stop").onclick=()=>ctl?.abort();
 document.addEventListener("click",e=>{
   const id=e.target.closest?.("[data-rid]")?.dataset.rid; if(!id) return;
-  location.hash="explore"; ["#fCur","#fNear","#fFee","#fTxt","#fGrade"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;
+  location.hash="explore"; ["#fCur","#fNear","#fKm","#fFee","#fTxt","#fGrade"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;
   renderExplore();
   const pos=lastList.findIndex(x=>x.s.id===id); if(pos>=shown){shown=pos+1; renderExplore(false);}
   setTimeout(()=>{const c=$("#card-"+id); if(c){c.scrollIntoView({block:"center"});c.classList.add("flash");setTimeout(()=>c.classList.remove("flash"),1600)}},50);
@@ -559,7 +563,7 @@ document.addEventListener("click",e=>{
 
 const ICON={"pin": "<path d=\"M12 21s-6.5-6.1-6.5-11A6.5 6.5 0 0 1 18.5 10c0 4.9-6.5 11-6.5 11z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"12\" cy=\"10\" r=\"2.3\" fill=\"currentColor\"/>", "star": "<path d=\"M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/>", "book": "<path d=\"M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/>", "kid": "<circle cx=\"12\" cy=\"6.5\" r=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M6 21v-5a6 6 0 0 1 12 0v5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/>"};
 const STARTERS=[["pin","CBSE school near Dubai Sports City, under AED 20,000, for KG1"],
- ["star","Outstanding British primary school near Arabian Ranches, budget up to AED 60,000"],
+ ["star","Outstanding British primary school within 10 km of Arabian Ranches, budget up to AED 60,000"],
  ["book","American school in Al Qusais rated Good or better, for Grade 3"],
  ["kid","I need a school for my daughter"]];
 $("#starters").innerHTML=STARTERS.map(([i,s])=>`<button class="chip" type="button" data-q="${esc(s)}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[i]}</svg><span>${esc(s)}</span></button>`).join("");
