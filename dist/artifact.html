@@ -2,7 +2,7 @@
 <meta name="theme-color" content="#0b6e6e">
 <meta name="claude:viewport-fit-sides" content="cover">
 <title>UAE School Fees · Dubai school fees, KHDA ratings and AI shortlist</title>
-<meta name="description" content="Official KHDA-approved fees by grade for Dubai private schools, with ratings, distance from your area and a free AI shortlist. Abu Dhabi and Sharjah coming soon.">
+<meta name="description" content="Official KHDA-approved fees by grade for Dubai private schools, with ratings, distance from your area and a free AI shortlist.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
@@ -200,7 +200,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
       <div class="hero-copy">
         <span class="eyebrow"><svg class="eyebrow-icon" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg> AI school finder for Dubai parents</span>
         <h1>Find a Dubai school that fits your family</h1>
-        <p class="coverage"><span class="cov-dot" aria-hidden="true"></span><span>Covering all <span class="nSchools">236</span> private schools in Dubai. Abu Dhabi and Sharjah coming soon.</span></p>
+        <p class="coverage"><span class="cov-dot" aria-hidden="true"></span><span>Covering all <span class="nSchools">236</span> private schools in Dubai. Other emirates planned.</span></p>
         <p class="lede">Ask in plain words: budget, curriculum, your child's grade and where you live. We search every KHDA-registered private school in Dubai and write a shortlist you can check, with the official fee for your child's grade.</p>
         <ul class="stats" aria-label="What UAE School Fees covers">
           <li><strong class="nSchools">236</strong><span>KHDA schools</span></li>
@@ -309,7 +309,7 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
   <section id="view-about" hidden>
     <h1>About &amp; sources</h1>
     <div class="about">
-      <p>UAE School Fees helps parents choose a private school. It puts the official school register, approved fees by grade and distance search in one place, and an AI assistant answers questions with citations. It covers Dubai today; Abu Dhabi and Sharjah will follow once official data is available.</p>
+      <p>UAE School Fees helps parents choose a private school. It puts the official school register, approved fees by grade and distance search in one place, and an AI assistant answers questions with citations. It covers Dubai only for now; other emirates will be added once official data is available.</p>
       <p><strong>Not affiliated with KHDA or the Government of Dubai.</strong> School data comes from KHDA's published register and open data, credited below.</p>
       <div>
         <h2>Data</h2>
@@ -511,7 +511,7 @@ function radiusNote(n) {
 }
 
 const RULES = `You are the UAE School Fees assistant (uaeschoolfees.com). You help parents shortlist private schools. Today you cover Dubai only.
-If the parent asks about a school or area in another emirate (Abu Dhabi, Sharjah, Ajman, Ras Al Khaimah, Fujairah, Umm Al Quwain), say plainly in one sentence that only Dubai is covered for now and that Abu Dhabi and Sharjah are coming; then offer Dubai options only if they fit (e.g. Dubai schools near the Sharjah border for a Sharjah resident). Never present a Dubai school as being in another emirate.
+If the parent asks about a school or area in another emirate (Abu Dhabi, Sharjah, Ajman, Ras Al Khaimah, Fujairah, Umm Al Quwain), say plainly in one sentence that only Dubai is covered for now and other emirates are planned (no date); then offer Dubai options only if they fit (e.g. Dubai schools near the Sharjah border for a Sharjah resident). Never present a Dubai school as being in another emirate.
 Each user turn contains the parent's question and a set of RETRIEVED SCHOOL RECORDS from KHDA's official register.
 Use ONLY those records. Never add schools, fees, ratings or locations from outside knowledge, even if you know them.
 

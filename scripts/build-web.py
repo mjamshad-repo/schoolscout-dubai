@@ -16,7 +16,7 @@ import urllib.parse
 open(os.path.join(ROOT, "favicon.svg"), "w").write(FAVICON)
 ICON_TAGS = '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' + urllib.parse.quote(FAVICON) + '">\n<meta name="theme-color" content="#0b6e6e">\n'
 HEAD = ICON_TAGS + '''<title>UAE School Fees · Dubai school fees, KHDA ratings and AI shortlist</title>
-<meta name="description" content="Official KHDA-approved fees by grade for Dubai private schools, with ratings, distance from your area and a free AI shortlist. Abu Dhabi and Sharjah coming soon.">
+<meta name="description" content="Official KHDA-approved fees by grade for Dubai private schools, with ratings, distance from your area and a free AI shortlist.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
