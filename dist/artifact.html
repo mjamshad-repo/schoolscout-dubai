@@ -187,6 +187,13 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
 .vote button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 10px;cursor:pointer;font-size:.95rem}
 .vote button:hover{border-color:var(--accent)}
 .ts:empty{display:none}.ts{margin:6px 0}
+
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+th.sortable::after{content:" ↕";opacity:.45;font-size:.85em}
+th.sortable[aria-sort=ascending]::after{content:" ↑";opacity:1}
+th.sortable[aria-sort=descending]::after{content:" ↓";opacity:1}
+th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
+.sort-hint{font-size:.78rem;color:var(--muted);margin:4px 0 0}
 </style>
 <header><div class="wrap">
   <a class="brand" href="#ask" aria-label="Dubai School Fees home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>Dubai School Fees</span><small>Dubai</small><span class="ai-pill">AI</span></a>
@@ -291,6 +298,10 @@ details.fees td.num{text-align:right;font:500 .85rem var(--font-data);font-varia
       <label><span class="label">KHDA rating (min)</span>
         <select id="fRat"><option value="0">Any</option><option value="3">Good or better</option><option value="4">Very Good or better</option><option value="5">Outstanding</option></select></label>
       <label><span class="label">Name or area</span><input id="fTxt" type="search" placeholder="e.g. Qusais, GEMS"></label>
+      <label><span class="label">Sort by</span><select id="fSort">
+        <option value="">Recommended</option><option value="fee-asc">Fee: low to high</option><option value="fee-desc">Fee: high to low</option>
+        <option value="km-asc">Distance: nearest first</option><option value="km-desc">Distance: farthest first</option>
+        <option value="rate-desc">KHDA rating: best first</option><option value="rate-asc">KHDA rating: lowest first</option></select></label>
       <label class="check"><input id="fNew" type="checkbox"> Include schools not yet inspected</label>
     </div>
     <p class="count label" id="count"></p>
@@ -541,7 +552,7 @@ function needsClarifying(needs, schools) {
 }
 
 // Used when every AI model is busy: the search engine's own ranked table, with real fees and distances.
-function searchOnlyAnswer(hits, needs) {
+function searchOnlyAnswer(hits, needs, why = "busy") {
   const rows = hits.slice(0, 6).map(({ s, km: d }) => {
     const gf = gradeFee(s, needs.grade);
     const fee = s.fee_min_aed == null ? "not on file" : needs.grade != null && s.fees_by_grade
@@ -549,9 +560,13 @@ function searchOnlyAnswer(hits, needs) {
     const yr = s.rating_year ? ` (${String(s.rating_year).slice(0, 4)})` : "";
     return `| ${s.name} [${s.id}] | ${s.khda_rating}${yr} | ${fee} | ${s.area}${d != null ? ` · ${d} km` : ""} | ${s.curriculum} |`;
   });
-  return `Our AI assistant is very busy right now, so here are the **best matches from our search**, ranked by fit:\n\n` +
+  const intro = why === "check"
+    ? "We couldn't run our quick bot check in this browser, so here are the **best matches from our search** without the AI write-up, ranked by fit:"
+    : "Our AI assistant is very busy right now, so here are the **best matches from our search**, ranked by fit:";
+  return `${intro}\n\n` +
     `| School | KHDA rating | Annual fee | Area / distance | Curriculum |\n|---|---|---|---|---|\n${rows.join("\n")}\n\n` +
-    `Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.`;
+    (why === "check" ? "Tap a record ID to open the school's card. Refreshing the page usually brings the AI answers back."
+      : "Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.");
 }
 
 const RULES = `You are the Dubai School Fees assistant (dubaischoolfees.com). You help parents shortlist private schools. You cover Dubai only, but don't mention that unless the parent asks about another emirate.
@@ -673,16 +688,32 @@ function renderExplore(reset=true){
   const maxKm=near&&fKm.value?+fKm.value:null;
   let withD=list.map(s=>({s,d: near && typeof s.lat==="number" ? kmBetween(near,s) : null}));
   if(maxKm) withD=withD.filter(x=>x.d!=null&&x.d<=maxKm);
-  if(near) withD.sort((a,b)=>(a.d??1e9)-(b.d??1e9));
-  else withD.sort((a,b)=>(RATE[b.s.khda_rating]??-1)-(RATE[a.s.khda_rating]??-1) || (b.s.fee_min_aed!=null)-(a.s.fee_min_aed!=null) || a.s.name.localeCompare(b.s.name));
+  // Sorting. Recommended = nearest first when an area is chosen, otherwise best KHDA rating (then lower fee).
+  // Schools with no fee / no map point always go last, whichever direction is chosen.
+  const sortSel=$("#fSort"); [...sortSel.options].forEach(o=>{ if(o.value.startsWith("km")) o.disabled=!near; });
+  if(!near && sortSel.value.startsWith("km")) sortSel.value="";
+  const feeOf=x=> g!=null && x.s.fees_by_grade ? x.s.fees_by_grade[g] : x.s.fee_min_aed;
+  const rateOf=x=> RATE[x.s.khda_rating] ?? -1;
+  const last=(va,vb,dir)=> va==null&&vb==null?0 : va==null?1 : vb==null?-1 : dir*(va-vb);
+  const byName=(a,b)=>a.s.name.localeCompare(b.s.name);
+  const SORTS={
+    "fee-asc":(a,b)=>last(feeOf(a),feeOf(b),1)||byName(a,b), "fee-desc":(a,b)=>last(feeOf(a),feeOf(b),-1)||byName(a,b),
+    "km-asc":(a,b)=>last(a.d,b.d,1)||byName(a,b), "km-desc":(a,b)=>last(a.d,b.d,-1)||byName(a,b),
+    "rate-desc":(a,b)=>rateOf(b)-rateOf(a)||last(feeOf(a),feeOf(b),1)||byName(a,b), "rate-asc":(a,b)=>(rateOf(a)<0)-(rateOf(b)<0)||rateOf(a)-rateOf(b)||last(feeOf(a),feeOf(b),1)||byName(a,b),
+  };
+  const sortKey = sortSel.value || (near ? "km-asc" : "rate-desc");
+  withD.sort(SORTS[sortKey]);
+  try{ localStorage.setItem("ss_sort", sortSel.value); }catch{}
   lastList=withD;
-  $("#count").textContent=`${withD.length} of ${SCHOOLS.length} schools${g!=null?` · fees for ${GRADES[g]}`:""}${near?(maxKm?` · within ${maxKm} km of ${near.label}`:` · sorted by distance from ${near.label}`):""}`;
+  const SORT_LABEL={"fee-asc":"fee, low to high","fee-desc":"fee, high to low","km-asc":"nearest first","km-desc":"farthest first","rate-desc":"best KHDA rating first","rate-asc":"lowest KHDA rating first"};
+  $("#count").textContent=`${withD.length} of ${SCHOOLS.length} schools${g!=null?` · fees for ${GRADES[g]}`:""}${near?(maxKm?` · within ${maxKm} km of ${near.label}`:` · distances from ${near.label}`):""} · sorted by ${SORT_LABEL[sortKey]}`;
   $("#grid").innerHTML=withD.slice(0,shown).map(x=>card(x.s,x.d)).join("")||'<div class="empty">No school matches these filters. Try a larger distance, a lower rating, a higher fee, or include schools not yet inspected.</div>';
   $("#moreBtn").hidden = withD.length<=shown;
   $("#moreBtn").textContent=`Show more (${withD.length-shown} left)`;
   renderCmpBar();
 }
-["#fCur","#fRat","#fFee","#fTxt","#fNear","#fKm","#fNew","#fGrade"].forEach(id=>$(id).addEventListener("input",()=>renderExplore()));
+["#fCur","#fRat","#fFee","#fTxt","#fNear","#fKm","#fNew","#fGrade","#fSort"].forEach(id=>$(id).addEventListener("input",()=>renderExplore()));
+try{ const v=localStorage.getItem("ss_sort"); if(v) $("#fSort").value=v; }catch{}
 $("#moreBtn").onclick=()=>{shown+=30; renderExplore(false)};
 $("#grid").addEventListener("change",e=>{
   const id=e.target.dataset.cmp; if(!id) return;
@@ -735,6 +766,38 @@ const feedbackHtml=id=>`<div class="vote" data-log="${esc(id)}"><span>Was this h
 document.addEventListener("click",e=>{ const b=e.target.closest?.(".vote button"); if(!b) return; const box=b.closest(".vote");
   fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:box.dataset.log,vote:+b.dataset.vote})}).catch(()=>{});
   box.innerHTML=`<span>Thanks for the feedback.</span>`; });
+/* Tap a column header in an answer's table to sort it (fee, distance, rating, name). Tap again to reverse. */
+const RATE_WORDS=[["very weak",0],["weak",1],["acceptable",2],["very good",4],["good",3],["outstanding",5]];
+function cellValue(td, kind){
+  const t=td.textContent.toLowerCase();
+  if(kind==="rating"){ const hit=RATE_WORDS.find(([w])=>t.includes(w)); return hit?hit[1]:-1; }
+  if(kind==="km"){ const m=t.match(/(\d+(?:\.\d+)?)\s*km/); return m?+m[1]:null; }
+  if(kind==="fee"){ const m=t.replace(/,/g,"").match(/(\d{3,6})/); return m?+m[1]:null; }
+  return t.trim();
+}
+function makeSortable(root){
+  root.querySelectorAll("table").forEach(tbl=>{
+    const head=tbl.querySelector("thead tr")||tbl.rows[0]; if(!head||tbl.rows.length<3) return;
+    [...head.cells].forEach((th,i)=>{
+      const h=th.textContent.toLowerCase();
+      const kind=/fee|aed|price/.test(h)?"fee":/distance|km/.test(h)?"km":/rating/.test(h)?"rating":/school|name/.test(h)?"text":null;
+      if(!kind) return;
+      th.classList.add("sortable"); th.tabIndex=0; th.title="Sort by this column"; let dir=0;
+      const go=()=>{
+        dir = dir===1 ? -1 : 1;
+        const area = /distance|km/.test(h);
+        const body=tbl.tBodies[0]||tbl; const rows=[...body.rows].filter(r=>r!==head);
+        rows.sort((a,b)=>{ const va=cellValue(a.cells[i],area?"km":kind), vb=cellValue(b.cells[i],area?"km":kind);
+          if(va==null||va===-1) return 1; if(vb==null||vb===-1) return -1;
+          return kind==="text" ? dir*String(va).localeCompare(String(vb)) : dir*(va-vb); });
+        rows.forEach(r=>body.appendChild(r));
+        head.querySelectorAll("th").forEach(x=>x.removeAttribute("aria-sort")); th.setAttribute("aria-sort",dir===1?"ascending":"descending");
+      };
+      th.addEventListener("click",go); th.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+    });
+    if(tbl.querySelector(".sortable")) tbl.insertAdjacentHTML("afterend",'<p class="sort-hint">Tip: tap Fee, Distance or Rating in the table header to sort.</p>');
+  });
+}
 const AVATAR='<span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.1 6.1 2.4-6.1 2.4L12 19.5l-2.4-6.1-6.1-2.4 6.1-2.4z" fill="currentColor"/><path d="M19 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" opacity=".7"/></svg></span>';
 function bubble(role,html){
   const d=document.createElement("div"); d.className="msg "+role;
@@ -788,6 +851,7 @@ async function ask(q){
     const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade,meta.maxKm); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
     showMeta(data.retrieved,data.place,data.grade,data.maxKm);
     body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE+(data.logId&&CFG.feedback?feedbackHtml(data.logId):"");
+    makeSortable(body);
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
   }catch(e){
@@ -801,7 +865,7 @@ $("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preven
 $("#stop").onclick=()=>ctl?.abort();
 document.addEventListener("click",e=>{
   const id=e.target.closest?.("[data-rid]")?.dataset.rid; if(!id) return;
-  location.hash="explore"; ["#fCur","#fNear","#fKm","#fFee","#fTxt","#fGrade"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;
+  location.hash="explore"; ["#fCur","#fNear","#fKm","#fFee","#fTxt","#fGrade","#fSort"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;
   renderExplore();
   const pos=lastList.findIndex(x=>x.s.id===id); if(pos>=shown){shown=pos+1; renderExplore(false);}
   setTimeout(()=>{const c=$("#card-"+id); if(c){c.scrollIntoView({block:"center"});c.classList.add("flash");setTimeout(()=>c.classList.remove("flash"),1600)}},50);
