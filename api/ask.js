@@ -2,9 +2,9 @@
 //   -> { answer: markdown, retrieved: ["SCH001", ...], provider }
 // The API key never leaves the server. Retrieval runs here, so the browser cannot send its own prompt.
 import { SCHOOLS } from "./_schools.js";
-import { retrieve, recordText, radiusNote } from "./_retrieval.js";
+import { parseNeeds as parseNeedsOnly, retrieve, recordText, radiusNote, otherEmirate, needsClarifying, searchOnlyAnswer } from "./_retrieval.js";
 import { RULES } from "./_prompt.js";
-import { complete, providerName, ProviderError } from "./_llm.js";
+import { complete, ProviderError } from "./_llm.js";
 
 const LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN || 8);
 const seen = new Map(); // ip -> timestamps (best effort: per server instance)
@@ -17,6 +17,10 @@ function rateLimited(ip) {
 }
 
 const clip = (s, n) => String(s ?? "").slice(0, n);
+
+// Same first question within 30 minutes (e.g. the "Try asking" buttons): reuse the answer, no AI call
+const cache = new Map(), CACHE_MS = 30 * 60_000;
+const cacheKey = q => q.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Use POST." });
@@ -40,12 +44,25 @@ export default async function handler(req, res) {
   const records = hits.map(h => recordText(h.s, h.km, placeLabel, needs.grade ?? null)).join("\n\n");
   const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
 
+  const meta = { retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, grade: needs.grade ?? null, maxKm: needs.place ? needs.maxKm ?? null : null };
+  const send = (answer, provider) => res.status(200).json({ answer, ...meta, provider });
+
+  // 1. Answers that need no AI
+  const other = otherEmirate(question, parseNeedsOnly(question, SCHOOLS));
+  if (other) return res.status(200).json({ answer: other, retrieved: [], place: null, grade: null, maxKm: null, provider: "rules" });
+  const clarify = needsClarifying(needs, SCHOOLS);
+  if (clarify) return res.status(200).json({ answer: clarify, retrieved: [], place: null, grade: null, maxKm: null, provider: "rules" });
+  const key = !history.length && cacheKey(question), hit = key && cache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_MS) return send(hit.answer, "cache");
+
+  // 2. The AI, with fallbacks; 3. if every model is busy, the search engine's own table
   try {
-    const answer = await complete(RULES, turns);
-    res.status(200).json({ answer, retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, grade: needs.grade ?? null, maxKm: needs.place ? needs.maxKm ?? null : null, provider: providerName() });
+    const { text, model } = await complete(RULES, turns);
+    if (key) { cache.set(key, { answer: text, at: Date.now() }); if (cache.size > 300) cache.delete(cache.keys().next().value); }
+    send(text, model);
   } catch (e) {
-    const status = e instanceof ProviderError ? e.status : 500;
-    console.error("ask failed:", e.message);
-    res.status(status).json({ error: e instanceof ProviderError ? e.message : "Something went wrong. Try again in a moment.", retrieved: hits.map(h => h.s.id) });
+    console.error("ask failed:", e.message, e.cause?.message || "");
+    if (hits.length) return send(searchOnlyAnswer(hits, needs), "search");
+    res.status(e instanceof ProviderError ? e.status : 500).json({ error: "Something went wrong. Try again in a moment.", ...meta });
   }
 }

@@ -1,98 +1,125 @@
-// One function, three providers. Pick with AI_PROVIDER, or the first API key that is set.
-//   gemini    -> Google Gemini API (free tier available)        GEMINI_API_KEY,    GEMINI_MODEL
-//   groq      -> Groq, OpenAI-compatible (free tier available)  GROQ_API_KEY,      GROQ_MODEL
-//   anthropic -> Claude API (paid)                              ANTHROPIC_API_KEY, ANTHROPIC_MODEL
-//   mock      -> no network; returns a canned answer for local testing
+// AI router: tries a chain of models and moves to the next one when a model is busy, out of free quota or missing.
+// Providers join the chain only when their key is set:
+//   cloudflare -> Cloudflare Workers AI (free daily allowance, no training)  CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_MODEL
+//   groq       -> Groq, OpenAI-compatible (free tier, no retention)         GROQ_API_KEY, GROQ_MODEL
+//   gemini     -> Google Gemini API; several models, each with its own free quota   GEMINI_API_KEY, GEMINI_MODELS
+//   anthropic  -> Claude API (paid)                                         ANTHROPIC_API_KEY, ANTHROPIC_MODEL
+//   mock       -> no network; canned answer for local testing (AI_PROVIDER=mock)
+// Default order: cloudflare, groq (private) -> Gemini Flash Lite models -> Gemma -> Gemini Flash -> anthropic.
+// Override with AI_ORDER, e.g. "gemini:gemini-3.5-flash-lite,groq,gemini:gemma-4-31b-it".
 
 const env = process.env;
-
-export function providerName() {
-  if (env.AI_PROVIDER) return env.AI_PROVIDER.toLowerCase();
-  if (env.GEMINI_API_KEY) return "gemini";
-  if (env.GROQ_API_KEY) return "groq";
-  if (env.ANTHROPIC_API_KEY) return "anthropic";
-  return "none";
-}
-
-// system: string; turns: [{role:"user"|"assistant", content}] ending on a user turn
-export async function complete(system, turns) {
-  const p = providerName();
-  if (p === "gemini") return gemini(system, turns);
-  if (p === "groq") return groq(system, turns);
-  if (p === "anthropic") return anthropic(system, turns);
-  if (p === "mock") return mock(turns);
-  throw new ProviderError("No AI provider is configured. Set GEMINI_API_KEY (free), GROQ_API_KEY or ANTHROPIC_API_KEY.", 500);
-}
+const DEFAULT_GEMINI = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemma-4-31b-it", "gemini-2.5-flash"];
+const PER_CALL_MS = 14000;
 
 export class ProviderError extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
 }
 
-const BUSY = "The AI service is busy right now (free-tier demand). Wait a minute and ask again; Explore and Compare still work.";
+export function chain() {
+  if ((env.AI_PROVIDER || "").toLowerCase() === "mock") return [{ id: "mock", run: mock }];
+  const steps = {
+    cloudflare: env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID ? [{ id: `cloudflare:${env.CLOUDFLARE_MODEL || "@cf/openai/gpt-oss-120b"}`, run: cloudflare }] : [],
+    groq: env.GROQ_API_KEY ? [{ id: `groq:${env.GROQ_MODEL || "openai/gpt-oss-120b"}`, run: groq }] : [],
+    anthropic: env.ANTHROPIC_API_KEY ? [{ id: `anthropic:${env.ANTHROPIC_MODEL || "claude-haiku-5-5"}`, run: anthropic }] : [],
+  };
+  const geminiModels = env.GEMINI_API_KEY ? (env.GEMINI_MODELS ? env.GEMINI_MODELS.split(",").map(s => s.trim()).filter(Boolean) : DEFAULT_GEMINI) : [];
+  const g = m => ({ id: `gemini:${m}`, run: (s, t) => gemini(m, s, t) });
+  if (env.AI_ORDER) {
+    return env.AI_ORDER.split(",").map(s => s.trim()).flatMap(s => s.startsWith("gemini:") ? (env.GEMINI_API_KEY ? [g(s.slice(7))] : []) : (steps[s] || []));
+  }
+  const lite = geminiModels.filter(m => /lite/.test(m)), rest = geminiModels.filter(m => !/lite/.test(m));
+  return [...steps.cloudflare, ...steps.groq, ...lite.map(g), ...rest.map(g), ...steps.anthropic];
+}
+
+export const providerName = () => chain().map(c => c.id.split(":")[0])[0] || "none";
+
+// Models that just said "out of quota" are skipped for a while (per server instance), so later visitors don't wait on them.
+const cooling = new Map();
+const COOL_MS = { quota: 15 * 60_000, busy: 60_000, missing: 6 * 3600_000 };
+
+// system: string; turns: [{role, content}] ending on a user turn. Returns { text, model }.
+export async function complete(system, turns) {
+  const steps = chain();
+  if (!steps.length) throw new ProviderError("No AI provider is configured. Set GEMINI_API_KEY (free), GROQ_API_KEY or CLOUDFLARE_API_TOKEN.", 500);
+  const started = Date.now(); let last;
+  for (const step of steps) {
+    if ((cooling.get(step.id) || 0) > Date.now()) continue;
+    if (Date.now() - started > 22000) break;                       // keep inside the function's time limit
+    try { return { text: await step.run(system, turns), model: step.id }; }
+    catch (e) {
+      last = e;
+      if (e.kind) cooling.set(step.id, Date.now() + COOL_MS[e.kind]);
+      console.warn(`AI step ${step.id} failed (${e.kind || "error"}): ${e.message.slice(0, 160)}`);
+    }
+  }
+  const e = new ProviderError("Every AI model is busy or out of free quota right now.", 503); e.allBusy = true; e.cause = last; throw e;
+}
 
 async function post(url, headers, body) {
-  const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), PER_CALL_MS);
+  let r;
+  try { r = await fetch(url, { method: "POST", signal: ctl.signal, headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) }); }
+  catch (err) { const e = new ProviderError(err.name === "AbortError" ? "timed out" : err.message, 503); e.kind = "busy"; throw e; }
+  finally { clearTimeout(timer); }
   const data = await r.json().catch(() => ({}));
-  if (r.status === 429 || r.status === 503 || r.status === 500) {
-    const e = new ProviderError(BUSY, 503); e.retryable = true; throw e;
-  }
-  if (!r.ok) throw new ProviderError(`AI provider error ${r.status}: ${data?.error?.message || "unknown"}`, 502);
-  return data;
+  if (r.ok) return data;
+  const msg = data?.error?.message || data?.errors?.[0]?.message || `HTTP ${r.status}`;
+  const e = new ProviderError(`AI provider error ${r.status}: ${msg}`, 502);
+  e.httpStatus = r.status;
+  if (r.status === 429) e.kind = /quota|per day|daily|exhausted|limit: 0/i.test(msg) ? "quota" : "busy";
+  else if (r.status >= 500) e.kind = "busy";
+  else if (r.status === 404) e.kind = "missing";
+  throw e;
 }
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+const empty = () => new ProviderError("The AI returned an empty answer.", 502);
 
-// Free-tier models are sometimes overloaded: try the main model twice, then a lighter fallback model once.
-async function gemini(system, turns) {
-  const main = env.GEMINI_MODEL || "gemini-2.5-flash";
-  const fallback = env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
-  const attempts = [main, main, ...(fallback && fallback !== main ? [fallback] : [])];
-  let last;
-  for (const [i, model] of attempts.entries()) {
-    try { return await geminiOnce(model, system, turns); }
-    catch (e) { last = e; if (!e.retryable) throw e; if (i < attempts.length - 1) await sleep(i === 0 ? 1200 : 400); }
+async function gemini(model, system, turns) {
+  const gemma = /^gemma/.test(model);
+  const contents = turns.map(t => ({ role: t.role === "assistant" ? "model" : "user", parts: [{ text: t.content }] }));
+  // Gemma on the Gemini API takes no system instruction: put the rules in the first user turn instead.
+  if (gemma) contents[0] = { role: "user", parts: [{ text: `${system}\n\n---\n\n${contents[0].parts[0].text}` }] };
+  const body = thinking => ({
+    ...(gemma ? {} : { systemInstruction: { parts: [{ text: system }] } }),
+    contents,
+    generationConfig: { temperature: 0.2, maxOutputTokens: 2048, ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+  });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const headers = { "x-goog-api-key": env.GEMINI_API_KEY };
+  let data;
+  try { data = await post(url, headers, body(/flash/.test(model))); }
+  catch (e) {                                                        // some models reject the thinking setting: retry once without it
+    if (e.httpStatus === 400 && /thinking/i.test(e.message)) data = await post(url, headers, body(false));
+    else throw e;
   }
-  throw last;
-}
-
-async function geminiOnce(model, system, turns) {
-  const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    { "x-goog-api-key": env.GEMINI_API_KEY },
-    {
-      systemInstruction: { parts: [{ text: system }] },
-      contents: turns.map(t => ({ role: t.role === "assistant" ? "model" : "user", parts: [{ text: t.content }] })),
-      generationConfig: {
-        temperature: 0.2, maxOutputTokens: 4096,
-        // Flash models think before answering by default; a shortlist doesn't need it, and it would use the output budget.
-        ...(/flash/.test(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
-      },
-    });
-  const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-  if (!text) throw new ProviderError("The AI returned an empty answer. Try rephrasing.", 502);
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  const text = parts.filter(p => !p.thought).map(p => p.text || "").join("").trim();
+  if (!text) throw empty();
   return text;
 }
 
-async function groq(system, turns) {
-  const model = env.GROQ_MODEL || "openai/gpt-oss-120b";
-  const data = await post("https://api.groq.com/openai/v1/chat/completions",
-    { authorization: `Bearer ${env.GROQ_API_KEY}` },
+async function openaiStyle(url, key, model, system, turns) {
+  const data = await post(url, { authorization: `Bearer ${key}` },
     { model, temperature: 0.2, max_tokens: 2048, messages: [{ role: "system", content: system }, ...turns] });
   const text = data.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new ProviderError("The AI returned an empty answer. Try rephrasing.", 502);
+  if (!text) throw empty();
   return text;
 }
+const groq = (s, t) => openaiStyle("https://api.groq.com/openai/v1/chat/completions", env.GROQ_API_KEY, env.GROQ_MODEL || "openai/gpt-oss-120b", s, t);
+const cloudflare = (s, t) => openaiStyle(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
+  env.CLOUDFLARE_API_TOKEN, env.CLOUDFLARE_MODEL || "@cf/openai/gpt-oss-120b", s, t);
 
 async function anthropic(system, turns) {
-  const model = env.ANTHROPIC_MODEL || "claude-haiku-5-5";
   const data = await post("https://api.anthropic.com/v1/messages",
     { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-    { model, max_tokens: 2048, temperature: 0.2, system, messages: turns });
+    { model: env.ANTHROPIC_MODEL || "claude-haiku-5-5", max_tokens: 2048, temperature: 0.2, system, messages: turns });
   const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-  if (!text) throw new ProviderError("The AI returned an empty answer. Try rephrasing.", 502);
+  if (!text) throw empty();
   return text;
 }
 
-function mock(turns) {
+function mock(system, turns) {
   const ids = [...turns.at(-1).content.matchAll(/\[(SCH\d{3})\]/g)].map(m => m[1]).slice(0, 3);
   return `**Shortlist**\n\n| School | Rating | Annual fee (AED) | Area | Why it fits |\n|---|---|---|---|---|\n${ids.map(id => `| [${id}] | test | test | test | mock answer |`).join("\n")}\n\n**Next step** This is a mock answer for local testing.`;
 }

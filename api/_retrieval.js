@@ -169,3 +169,41 @@ export function radiusNote(n) {
   return `SEARCH NOTE: Only schools within ${n.maxKm} km (straight line) of ${n.place.label} were retrieved: ${n.inRadius} school(s) in that radius in total.` +
     (n.inRadius === 0 ? " None are inside it; say so and suggest a larger radius." : "") + "\n\n";
 }
+
+// ---------- answers that need no AI ----------
+const OTHER_EMIRATES = [["abu dhabi", "Abu Dhabi"], ["al ain", "Al Ain"], ["sharjah", "Sharjah"], ["ajman", "Ajman"],
+  ["ras al khaimah", "Ras Al Khaimah"], ["rak", "Ras Al Khaimah"], ["fujairah", "Fujairah"], ["umm al quwain", "Umm Al Quwain"], ["uaq", "Umm Al Quwain"]];
+
+// An emirate other than Dubai is named and no Dubai place is: we can't help with AI, so answer directly.
+export function otherEmirate(question, needs) {
+  const t = " " + String(question).toLowerCase().replace(/[^a-z ]+/g, " ") + " ";
+  const hit = OTHER_EMIRATES.find(([w]) => t.includes(` ${w} `));
+  if (!hit || needs.place) return null;
+  const nearBorder = ["Sharjah", "Ajman", "Umm Al Quwain"].includes(hit[1]);
+  return `We only cover **Dubai's private schools** for now, so we can't show schools in ${hit[1]} yet. Other emirates are planned once official data is available.\n\n` +
+    (nearBorder
+      ? `If you live in ${hit[1]} and can travel into Dubai, try a Dubai area close to the border, for example: *"CBSE school near Al Qusais for KG1 under 20,000"*, or Al Nahda, Muhaisnah or Mirdif.`
+      : `If you're open to a school in Dubai, tell me the Dubai area, curriculum, your child's grade and your budget.`);
+}
+
+// Nothing to rank on yet (no budget, curriculum, grade, rating, place, distance, or school name): ask instead of calling the AI.
+export function needsClarifying(needs, schools) {
+  if (["budget", "curriculum", "minRating", "place", "grade", "maxKm"].some(k => needs[k] !== undefined)) return null;
+  const names = schools.map(s => s.name.toLowerCase());
+  if (needs.terms.some(w => names.some(n => n.includes(w)))) return null;
+  return `Happy to help. To find the right schools, tell me:\n\n1. **Your child's grade** next year (e.g. KG1, Grade 3, Year 7)\n2. **Curriculum** (British, CBSE, IB, American, French…)\n3. **Budget** per year in AED\n4. **Where you live** in Dubai (or a distance, e.g. "within 5 km of Mirdif")\n\nFor example: *"CBSE school near Al Qusais for KG1 under AED 20,000"*.`;
+}
+
+// Used when every AI model is busy: the search engine's own ranked table, with real fees and distances.
+export function searchOnlyAnswer(hits, needs) {
+  const rows = hits.slice(0, 6).map(({ s, km: d }) => {
+    const gf = gradeFee(s, needs.grade);
+    const fee = s.fee_min_aed == null ? "not on file" : needs.grade != null && s.fees_by_grade
+      ? (gf != null ? `${fmtAed(gf)} (${STEPS[needs.grade]})` : "grade not offered") : `${fmtAed(s.fee_min_aed)} – ${fmtAed(s.fee_max_aed)}`;
+    const yr = s.rating_year ? ` (${String(s.rating_year).slice(0, 4)})` : "";
+    return `| ${s.name} [${s.id}] | ${s.khda_rating}${yr} | ${fee} | ${s.area}${d != null ? ` · ${d} km` : ""} | ${s.curriculum} |`;
+  });
+  return `Our AI assistant is very busy right now, so here are the **best matches from our search**, ranked by fit:\n\n` +
+    `| School | KHDA rating | Annual fee | Area / distance | Curriculum |\n|---|---|---|---|---|\n${rows.join("\n")}\n\n` +
+    `Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.`;
+}
