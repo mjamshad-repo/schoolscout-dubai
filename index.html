@@ -206,6 +206,11 @@ th.sortable[aria-sort=ascending]::after{content:" ↑";opacity:1}
 th.sortable[aria-sort=descending]::after{content:" ↓";opacity:1}
 th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
 .sort-hint{font-size:.78rem;color:var(--muted);margin:4px 0 0}
+
+/* AI answer tables: keep numbers on one line, give the short Note column a sensible width */
+.msg.bot table td:nth-child(2),.msg.bot table td:nth-child(3){white-space:nowrap}
+.msg.bot table td:last-child{min-width:7.5em}
+@media (max-width:640px){.msg.bot table td:nth-child(2),.msg.bot table td:nth-child(3){white-space:normal}}
 </style>
 </head>
 <body>

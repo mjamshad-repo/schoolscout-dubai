@@ -194,6 +194,11 @@ th.sortable[aria-sort=ascending]::after{content:" ↑";opacity:1}
 th.sortable[aria-sort=descending]::after{content:" ↓";opacity:1}
 th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
 .sort-hint{font-size:.78rem;color:var(--muted);margin:4px 0 0}
+
+/* AI answer tables: keep numbers on one line, give the short Note column a sensible width */
+.msg.bot table td:nth-child(2),.msg.bot table td:nth-child(3){white-space:nowrap}
+.msg.bot table td:last-child{min-width:7.5em}
+@media (max-width:640px){.msg.bot table td:nth-child(2),.msg.bot table td:nth-child(3){white-space:normal}}
 </style>
 <header><div class="wrap">
   <a class="brand" href="#ask" aria-label="Dubai School Fees home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>Dubai School Fees</span><small>Dubai</small><span class="ai-pill">AI</span></a>
@@ -558,13 +563,13 @@ function searchOnlyAnswer(hits, needs, why = "busy") {
     const fee = s.fee_min_aed == null ? "not on file" : needs.grade != null && s.fees_by_grade
       ? (gf != null ? `${fmtAed(gf)} (${STEPS[needs.grade]})` : "grade not offered") : `${fmtAed(s.fee_min_aed)} – ${fmtAed(s.fee_max_aed)}`;
     const yr = s.rating_year ? ` (${String(s.rating_year).slice(0, 4)})` : "";
-    return `| ${s.name} [${s.id}] | ${s.khda_rating}${yr} | ${fee} | ${s.area}${d != null ? ` · ${d} km` : ""} | ${s.curriculum} |`;
+    return `| ${s.name} [${s.id}] | ${s.khda_rating}${yr} | ${fee} | ${d != null ? `${d} km · ${s.area}` : s.area} | ${s.curriculum} |`;
   });
   const intro = why === "check"
     ? "We couldn't run our quick bot check in this browser, so here are the **best matches from our search** without the AI write-up, ranked by fit:"
     : "Our AI assistant is very busy right now, so here are the **best matches from our search**, ranked by fit:";
   return `${intro}\n\n` +
-    `| School | KHDA rating | Annual fee | Area / distance | Curriculum |\n|---|---|---|---|---|\n${rows.join("\n")}\n\n` +
+    `| School | KHDA rating | Annual fee | Distance | Curriculum |\n|---|---|---|---|---|\n${rows.join("\n")}\n\n` +
     (why === "check" ? "Tap a record ID to open the school's card. Refreshing the page usually brings the AI answers back."
       : "Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.");
 }
@@ -578,7 +583,10 @@ If the question is too vague to rank schools (two or more of budget, curriculum,
 across the whole conversation), ask for them in one short question and stop.
 
 Otherwise answer in Markdown, under 250 words plus the table:
-**Shortlist** - a table: School | Rating (year) | Annual fee (AED) | Area / distance | Why it fits. Cite each school
+**Shortlist** - a table: School | Rating (year) | Annual fee (AED) | Distance | Note.
+- Distance cell: just the km and a short area name, e.g. "2.2 km · JVC" or "0.4 km · Al Qusais"; no "from ..." wording. If there is no distance, the short area name only.
+- Note cell: 1 to 4 words saying what stands out, e.g. "Closest", "Lowest fee", "Best rated", "Over budget", "New school". Never a sentence.
+Cite each school
 with its record ID in brackets, e.g. [SCH008]. Rank by fit: curriculum, then within budget, then distance, then rating.
 Leave out records that clearly do not fit.
 **Watch-outs** - near misses, schools whose fee is not on file, old inspections, fees that rise sharply in later grades.
