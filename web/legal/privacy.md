@@ -2,7 +2,7 @@
 
 *Last updated: 8 November 2026*
 
-UAE School Fees (uaeschoolfees.com) is designed to collect as little as possible. You don't need an account, and we don't ask for your name, phone number or email.
+Dubai School Fees (dubaischoolfees.com) is designed to collect as little as possible. You don't need an account, and we don't ask for your name, phone number or email.
 
 ## What happens when you use the site
 - **Browsing, Explore and Compare** run in your browser. Your filters, compare list and chosen area are saved only in your own browser's storage, so they're there next time. You can clear them by clearing site data in your browser.
@@ -20,7 +20,7 @@ We don't use advertising or tracking cookies, and we don't sell or share persona
 School websites, maps and KHDA reports open on other sites, which have their own privacy policies.
 
 ## Contact
-Questions about privacy: [hello@uaeschoolfees.com](mailto:hello@uaeschoolfees.com).
+Questions about privacy: [hello@dubaischoolfees.com](mailto:hello@dubaischoolfees.com).
 
 ## Changes
 We may update this policy. The date above shows the latest version.

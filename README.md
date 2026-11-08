@@ -1,6 +1,6 @@
-# UAE School Fees (uaeschoolfees.com)
+# Dubai School Fees (dubaischoolfees.com)
 
-Live at https://www.uaeschoolfees.com. Covers Dubai today; Abu Dhabi and Sharjah planned.
+Live at https://www.dubaischoolfees.com. Covers Dubai private schools. uaeschoolfees.com currently redirects here (307).
 
 Ask in plain words, get a cited shortlist of Dubai private schools. A retrieval-augmented (RAG) assistant over KHDA ratings, fees, curriculum and area.
 

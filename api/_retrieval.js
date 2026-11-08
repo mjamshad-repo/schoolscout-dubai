@@ -180,7 +180,7 @@ export function otherEmirate(question, needs) {
   const hit = OTHER_EMIRATES.find(([w]) => t.includes(` ${w} `));
   if (!hit || needs.place) return null;
   const nearBorder = ["Sharjah", "Ajman", "Umm Al Quwain"].includes(hit[1]);
-  return `We only cover **Dubai's private schools** for now, so we can't show schools in ${hit[1]} yet. Other emirates are planned once official data is available.\n\n` +
+  return `We only cover **Dubai's private schools** for now, so we can't show schools in ${hit[1]} yet.\n\n` +
     (nearBorder
       ? `If you live in ${hit[1]} and can travel into Dubai, try a Dubai area close to the border, for example: *"CBSE school near Al Qusais for KG1 under 20,000"*, or Al Nahda, Muhaisnah or Mirdif.`
       : `If you're open to a school in Dubai, tell me the Dubai area, curriculum, your child's grade and your budget.`);

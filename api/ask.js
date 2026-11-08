@@ -16,7 +16,7 @@ const cacheKey = q => q.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 export default async function handler(req, res) {
   const started = Date.now();
   if (req.method !== "POST") return res.status(405).json({ error: "Use POST." });
-  if (!originAllowed(req)) return res.status(403).json({ error: "This service only answers questions from uaeschoolfees.com." });
+  if (!originAllowed(req)) return res.status(403).json({ error: "This service only answers questions from dubaischoolfees.com." });
   const ip = clientIp(req);
   if (tooFast(ip)) return res.status(429).json({ error: "Too many questions in a minute. Wait a moment, then ask again." });
 
