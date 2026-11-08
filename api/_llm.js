@@ -73,6 +73,7 @@ async function post(url, headers, body) {
   throw e;
 }
 
+const THINKING_OK = new Map();
 const empty = () => new ProviderError("The AI returned an empty answer.", 502);
 
 async function gemini(model, system, turns) {
@@ -80,18 +81,21 @@ async function gemini(model, system, turns) {
   const contents = turns.map(t => ({ role: t.role === "assistant" ? "model" : "user", parts: [{ text: t.content }] }));
   // Gemma on the Gemini API takes no system instruction: put the rules in the first user turn instead.
   if (gemma) contents[0] = { role: "user", parts: [{ text: `${system}\n\n---\n\n${contents[0].parts[0].text}` }] };
-  const body = thinking => ({
+  const body = thinkingConfig => ({
     ...(gemma ? {} : { systemInstruction: { parts: [{ text: system }] } }),
     contents,
-    generationConfig: { temperature: 0.2, maxOutputTokens: 2048, ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+    generationConfig: { temperature: 0.2, maxOutputTokens: 4096, ...(thinkingConfig ? { thinkingConfig } : {}) },
   });
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const headers = { "x-goog-api-key": env.GEMINI_API_KEY };
-  let data;
-  try { data = await post(url, headers, body(/flash/.test(model))); }
-  catch (e) {                                                        // some models reject the thinking setting: retry once without it
-    if (e.httpStatus === 400 && /thinking/i.test(e.message)) data = await post(url, headers, body(false));
-    else throw e;
+  // A shortlist needs little "thinking". Gemini 2.x takes a token budget, Gemini 3+ a level; if a model rejects
+  // a setting (HTTP 400), try the next one, ending with no setting at all. The first setting that works is remembered.
+  const options = gemma ? [null] : /^gemini-[3-9]/.test(model) ? [{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }, null]
+    : /flash/.test(model) ? [{ thinkingBudget: 0 }, null] : [null];
+  let data, i = THINKING_OK.get(model) ?? 0;
+  for (; i < options.length; i++) {
+    try { data = await post(url, headers, body(options[i])); THINKING_OK.set(model, i); break; }
+    catch (e) { if (e.httpStatus !== 400 || i === options.length - 1) throw e; }
   }
   const parts = data.candidates?.[0]?.content?.parts || [];
   const text = parts.filter(p => !p.thought).map(p => p.text || "").join("").trim();
