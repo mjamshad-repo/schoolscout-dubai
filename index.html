@@ -735,7 +735,7 @@ function boot(){
   $("#nFees").textContent=$("#statFees").textContent=SCHOOLS.filter(s=>s.fee_min_aed!=null).length;
   { const yc={}; SCHOOLS.forEach(s=>{const m=(s.fee_source||"").match(/\((\d{4}-\d{2})\)/); if(m) yc[m[1]]=(yc[m[1]]||0)+1;}); const top=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0]; if(top) $("#statYear").textContent=top[0]; }
   $("#statOut").textContent=SCHOOLS.filter(s=>s.khda_rating==="Outstanding").length;
-  bubble("bot",`<div class="body"><p><strong>Hi, I'm Ezlyn — your AI-powered Dubai School Fees Expert.</strong> I know all ${SCHOOLS.length} KHDA-registered private schools in Dubai, with ratings, locations and contacts, and KHDA's official fees by grade for ${SCHOOLS.filter(s=>s.fee_min_aed!=null).length} of them. Tell me your budget, curriculum, your child's grade and where you live.</p></div>`);
+  bubble("bot",`<div class="body"><p><strong>Hi, I'm Ezlyn — your AI-powered Dubai School Fees Expert.</strong> Tell me your budget, curriculum, your child's grade and where you live, and I'll shortlist the schools that fit.</p></div>`);
   renderExplore(); route();
 }
 if(MODE==="web"){
