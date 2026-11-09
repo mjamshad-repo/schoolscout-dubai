@@ -118,7 +118,7 @@ for r in sorted(reg, key=lambda r: r["name_eng"].lower()):
         "phone": str(r.get("telephone") or ""), "email": r.get("email") or "",
         "website": site(r.get("web_address")),
         "established": est.year if hasattr(est, "year") else "",
-        "inspection_report": (r.get("inspectionreportpdflinken") or "").replace("http://", "https://"),
+        "inspection_report": "" if not re.search(r"DOC_ID=\d", r.get("inspectionreportpdflinken") or "") else r["inspectionreportpdflinken"].replace("http://", "https://"),
         "khda_id": r.get("educationcenterid"),
         "rating_source": f"KHDA private schools register (exported {register_date})",
         "notes": note,

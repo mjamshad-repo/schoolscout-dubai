@@ -64,6 +64,14 @@ function findPlace(t, schools) {
   return best ? { key: best.key, phrase: best.phrase, ...P[best.key] } : null;
 }
 
+// Distance from the parent's place. KHDA's map points are rounded and a few are wrong (e.g. a Sports City school
+// placed 10 km away); when the school's own area IS the place asked about, trust the area name over the map point.
+export function placeKm(place, s) {
+  if (!place || typeof s.lat !== "number") return { d: null, inArea: false };
+  const d = km(place, s), inArea = !!place.key && baseArea(s.area) === place.key;
+  return inArea && d > 3 ? { d: 1.5, inArea, approx: true } : { d, inArea };
+}
+
 export function km(a, b) {
   const R = 6371, rad = x => x * Math.PI / 180;
   const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
@@ -109,8 +117,9 @@ function score(s, n) {
   let sc = 0;
   const text = (s.name + " " + s.curriculum + " " + s.area).toLowerCase();
   if (n.curriculum) sc += s.curriculum.includes(n.curriculum) ? 5 : -4;
+  const inspected = s.khda_rating in RANK;
   const rank = RANK[s.khda_rating] ?? 0;
-  if (n.minRating) sc += rank >= n.minRating ? 3 : -3;
+  if (n.minRating) sc += inspected && rank >= n.minRating ? 3 : -3;
   const gf = gradeFee(s, n.grade);
   if (n.grade != null && s.fees_by_grade && gf == null) sc -= 8;   // school does not offer that grade
   const fee = n.grade != null && s.fees_by_grade ? gf : s.fee_min_aed;
@@ -120,12 +129,14 @@ function score(s, n) {
     else sc += fee <= n.budget * 1.2 ? 0.5 : -4;
   }
   if (n.place && typeof s.lat === "number") {
-    const d = km(n.place, s);
+    const { d, inArea } = placeKm(n.place, s);
     sc += d <= 3 ? 5 : d <= 6 ? 3.5 : d <= 10 ? 2 : d <= 15 ? 0.5 : -2;
+    if (inArea) sc += 1;                                       // named area: schools actually in it come first
   }
   const named = n.terms.filter(w => text.includes(w)).length;  // school names, e.g. "GEMS Warqa"
   sc += named * 2 + (named >= 2 ? 6 : 0);
-  sc += rank * 0.25 + (s.fee_min_aed != null ? 0.3 : 0);
+  // New schools that KHDA hasn't inspected yet are ranked like a mid rating, not like the lowest one
+  sc += (inspected ? rank : 2) * 0.25 + (s.fee_min_aed != null ? 0.3 : 0);
   return Math.round(sc * 100) / 100;
 }
 
@@ -136,7 +147,7 @@ export function retrieve(schools, question, previous = [], k = 10) {
     for (const key of ["budget", "curriculum", "minRating", "place", "grade", "maxKm"]) if (p[key] !== undefined) n[key] = p[key];
     n.terms.push(...p.terms);
   }
-  let pool = schools.map(s => ({ s, score: score(s, n), km: n.place && typeof s.lat === "number" ? Math.round(km(n.place, s) * 10) / 10 : null }));
+  let pool = schools.map(s => { const p = placeKm(n.place, s); return { s, score: score(s, n), km: p.d == null ? null : Math.round(p.d * 10) / 10, approx: !!p.approx }; });
   // A radius only applies once we know the place; schools without a map point cannot be shown as inside it
   if (n.maxKm && n.place) pool = pool.filter(h => h.km != null && h.km <= n.maxKm);
   const hits = pool.sort((a, b) => b.score - a.score).slice(0, k);
@@ -146,7 +157,7 @@ export function retrieve(schools, question, previous = [], k = 10) {
 
 const fmtAed = v => "AED " + Number(v).toLocaleString("en-US");
 
-export function recordText(s, distKm = null, placeLabel = "", grade = null) {
+export function recordText(s, distKm = null, placeLabel = "", grade = null, approx = false) {
   const gf = gradeFee(s, grade);
   let fee;
   if (s.fee_min_aed == null) fee = "Annual tuition: not on file";
@@ -156,9 +167,9 @@ export function recordText(s, distKm = null, placeLabel = "", grade = null) {
     fee += `. Source: ${s.fee_source}`;
   }
   return `[${s.id}] ${s.name}
-Curriculum: ${s.curriculum} | KHDA rating: ${s.khda_rating}${s.rating_year ? ` (${s.rating_year} inspection)` : ""}
+Curriculum: ${s.curriculum} | KHDA rating: ${s.khda_rating}${s.rating_year ? ` (${s.rating_year} inspection)` : ""}${s.khda_rating === "Not yet inspected" ? " (likely a new school; KHDA has not inspected it yet)" : ""}
 ${fee}
-Area: ${s.area}${distKm != null ? ` | Straight-line distance from ${placeLabel}: about ${distKm} km` : ""} | Grades offered: ${s.grades}
+Area: ${s.area}${distKm != null ? (approx ? ` | Located in ${placeLabel} (KHDA's map point for this school is imprecise, so no exact distance)` : ` | Straight-line distance from ${placeLabel}: about ${distKm} km`) : ""} | Grades offered: ${s.grades}
 Website: ${s.website || "not listed"} | Phone: ${s.phone || "not listed"}${s.notes ? "\nNote: " + s.notes : ""}`;
 }
 

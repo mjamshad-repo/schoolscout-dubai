@@ -21,6 +21,8 @@ const cases = [
   { q: "CBSE school within 10 km of Sports City", check: (h, n) => n.maxKm === 10 && n.budget === undefined && h.length > 0 && h.every(x => x.km != null && x.km <= 10) },
   { q: "British school 5km from Al Barsha under 50000", check: (h, n) => n.maxKm === 5 && n.budget === 50000 && h.every(x => x.km <= 5) },
   { q: "schools within 3 km", check: (h, n) => n.maxKm === 3 && !n.place },
+  { q: "british school in sports city", check: h => h.slice(0, 5).some(x => x.s.id === "SCH180") },   // new school, KHDA map point off by 10 km
+  { q: "Queen Elizabeths School fees", check: h => h[0].s.id === "SCH180" },
 ];
 
 let fail = 0;

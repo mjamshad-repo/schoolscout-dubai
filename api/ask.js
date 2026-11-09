@@ -57,7 +57,7 @@ export default async function handler(req, res) {
   if (used && (used.visitor > cap.visitor || used.all > cap.all)) return finish(searchOnlyAnswer(hits, needs), used.all > cap.all ? "search:site-cap" : "search:visitor-cap");
 
   // 3. The AI, with fallbacks; 4. if every model is busy, the search engine's own table
-  const records = hits.map(h => recordText(h.s, h.km, needs.place?.label || "", needs.grade ?? null)).join("\n\n");
+  const records = hits.map(h => recordText(h.s, h.km, needs.place?.label || "", needs.grade ?? null, h.approx)).join("\n\n");
   const turns = [...history, { role: "user", content: `QUESTION: ${question}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}` }];
   try {
     // Preview deployments only (behind Vercel login): a tester can pick the AI order for one request

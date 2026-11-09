@@ -343,7 +343,7 @@ th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
         <option value="">Recommended</option><option value="fee-asc">Fee: low to high</option><option value="fee-desc">Fee: high to low</option>
         <option value="km-asc">Distance: nearest first</option><option value="km-desc">Distance: farthest first</option>
         <option value="rate-desc">KHDA rating: best first</option><option value="rate-asc">KHDA rating: lowest first</option></select></label>
-      <label class="check"><input id="fNew" type="checkbox"> Include schools not yet inspected</label>
+      <label class="check"><input id="fNew" type="checkbox" checked> Include new schools not yet inspected</label>
     </div>
     <p class="count label" id="count"></p>
     <div class="grid" id="grid"></div>
@@ -429,8 +429,13 @@ function buildPlaces(){
     (acc[label] ||= {lat:0,lng:0,n:0}); acc[label].lat+=s.lat; acc[label].lng+=s.lng; acc[label].n++; }
   PLACE_LIST=Object.entries(acc).map(([label,v])=>({label,lat:v.lat/v.n,lng:v.lng/v.n})).sort((a,b)=>a.label.localeCompare(b.label));
 }
-function kmBetween(a,b){const R=6371,r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
+const areaLabel=s=>{const l=s.area.replace(/\s*\(.*\)$/,"").replace(/\s+(First|Second|Third|Fourth|Fifth|\d+)$/,"");return l==="Muhaisanah"?"Muhaisnah":l;};
+function rawKm(a,b){const R=6371,r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
   const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+// A school in the chosen area counts as in it, even when KHDA's (rounded, sometimes wrong) map point says otherwise
+const inAreaOff=(a,b)=>!!a.label&&areaLabel(b)===a.label&&rawKm(a,b)>3;
+function kmBetween(a,b){ return inAreaOff(a,b)?1.5:rawKm(a,b); }
+const distLabel=(a,b)=>inAreaOff(a,b)?`in ${esc(a.label)}`:`${kmBetween(a,b).toFixed(1)} km`;
 
 /* ---------- cards ---------- */
 function links(s){
@@ -458,10 +463,10 @@ function feeTable(s){
   const rows=s.fees_by_grade.map((f,i)=>f==null?"":`<tr><td>${esc(GRADES[i])}</td><td class="num">${aed(f)}</td></tr>`).join("");
   return `<details class="fees"><summary>Fees by grade · ${esc((s.fee_source.match(/\((.*)\)/)||[])[1]||"")}</summary><table>${rows}</table>${s.notes?`<p class="meta">${esc(s.notes)}</p>`:""}</details>`;
 }
-function card(s, d){
+function card(s, d, near){
   const on = selected.includes(s.id);
   return `<article class="card" id="card-${s.id}">
-    <div class="row" style="justify-content:space-between"><span class="label">${s.id}${s.established?` · est. ${s.established}`:""}</span>${d!=null?`<span class="dist">${d.toFixed(1)} km</span>`:""}</div>
+    <div class="row" style="justify-content:space-between"><span class="label">${s.id}${s.established?` · est. ${s.established}`:""}</span>${d!=null?`<span class="dist">${near?distLabel(near,s):d.toFixed(1)+" km"}</span>`:""}</div>
     <h3>${esc(s.name)}</h3>
     <div class="row"><span class="badge rating ${rcls(s.khda_rating)}">${esc(s.khda_rating)}${s.rating_year?` · ${esc(s.rating_year.slice(0,4))}-${esc(s.rating_year.slice(-2))}`:""}</span><span class="badge">${esc(s.curriculum)}</span></div>
     ${feeHtml(s)}
@@ -507,7 +512,7 @@ function renderExplore(reset=true){
   lastList=withD;
   const SORT_LABEL={"fee-asc":"fee, low to high","fee-desc":"fee, high to low","km-asc":"nearest first","km-desc":"farthest first","rate-desc":"best KHDA rating first","rate-asc":"lowest KHDA rating first"};
   $("#count").textContent=`${withD.length} of ${SCHOOLS.length} schools${g!=null?` · fees for ${GRADES[g]}`:""}${near?(maxKm?` · within ${maxKm} km of ${near.label}`:` · distances from ${near.label}`):""} · sorted by ${SORT_LABEL[sortKey]}`;
-  $("#grid").innerHTML=withD.slice(0,shown).map(x=>card(x.s,x.d)).join("")||'<div class="empty">No school matches these filters. Try a larger distance, a lower rating, a higher fee, or include schools not yet inspected.</div>';
+  $("#grid").innerHTML=withD.slice(0,shown).map(x=>card(x.s,x.d,near)).join("")||'<div class="empty">No school matches these filters. Try a larger distance, a lower rating, a higher fee, or include schools not yet inspected.</div>';
   $("#moreBtn").hidden = withD.length<=shown;
   $("#moreBtn").textContent=`Show more (${withD.length-shown} left)`;
   renderCmpBar();
@@ -539,7 +544,7 @@ function renderCompare(){
     ["Fee range",s=>s.fee_min_aed!=null?`<span class="fee">${aed(s.fee_min_aed)} – ${aed(s.fee_max_aed)}</span>`:"Not on file"],
     ...GRADES.map((label,i)=>[label,s=>s.fees_by_grade?.[i]!=null?`<span class="fee">${aed(s.fees_by_grade[i])}</span>`:"—"]).filter((_,i)=>selected.some(id=>byId(id)?.fees_by_grade?.[i]!=null)),
     ["Area",s=>esc(s.area)],
-    ...(cnear?[[`Distance from ${esc(cnear.label)}`,s=>typeof s.lat==="number"?`<span class="dist">${kmBetween(cnear,s).toFixed(1)} km</span>`:"No map point"]]:[]),
+    ...(cnear?[[`Distance from ${esc(cnear.label)}`,s=>typeof s.lat==="number"?`<span class="dist">${distLabel(cnear,s)}</span>`:"No map point"]]:[]),
     ["Grades",s=>esc(s.grades)],["Established",s=>esc(s.established||"Not listed")],
     ["Phone",s=>esc(s.phone||"Not listed")],["Website",s=>L(s.website,"Open")],
     ["Map",s=>typeof s.lat==="number"?L(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`,"Open"):"Not listed"],
@@ -647,7 +652,7 @@ async function answerArtifact(q, signal, onText){
   const prev=turns.filter(t=>t.role==="user").map(t=>t.content);
   const {hits,needs}=retrieve(SCHOOLS,q,prev);
   onText(null,{retrieved:hits.map(h=>h.s.id),place:needs.place?.label,grade:needs.grade,maxKm:needs.place?needs.maxKm:null});
-  const records=hits.map(h=>recordText(h.s,h.km,needs.place?.label||"",needs.grade??null)).join("\n\n");
+  const records=hits.map(h=>recordText(h.s,h.km,needs.place?.label||"",needs.grade??null,h.approx)).join("\n\n");
   const msgs=[{role:"user",content:RULES},...turns,{role:"user",content:`QUESTION: ${q}\n\n${radiusNote(needs)}RETRIEVED SCHOOL RECORDS (${hits.length} of ${SCHOOLS.length}):\n${records}`}];
   try{
     const {text}=await sampleFn(msgs,{cache:false,signal,onText:({text})=>onText(text)});

@@ -1,0 +1,36 @@
+# Every Monday: looks for new KHDA schools that aren't on the site yet and opens a GitHub issue if it finds any.
+# GitHub emails the repository owner about new issues, so you get an alert without checking anything.
+name: Check for new KHDA schools
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"        # 03:00 UTC every Monday (07:00 Dubai)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Probe KHDA open data for new schools
+        run: node scripts/find-new-schools.mjs 1500
+      - name: Open an issue if any were found (once per set of schools)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          if [ -s new-schools.md ]; then
+            title="New KHDA schools to add: $(grep -o '^| [0-9]*' new-schools.md | tr -d '| ' | paste -sd, -)"
+            if gh issue list --state open --search "in:title \"$title\"" --json number --jq 'length' | grep -q '^0$'; then
+              gh issue create --title "$title" --body-file new-schools.md
+            else
+              echo "Issue already open for these schools."
+            fi
+          else
+            echo "No new schools."
+          fi
