@@ -108,3 +108,19 @@ th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
 .choices{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.choices .chip{border-color:var(--accent);color:var(--accent)}.choices .chip:disabled{opacity:.5;cursor:default}
 /* The chat panel used to stretch to the height of the side column, leaving an empty gap above the question box */
 .ask{align-items:start}.thread{min-height:0}
+/* Compact hero: the question box should be visible on first load on a laptop screen */
+.hero{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);padding:18px max(16px,2.5vw);gap:20px}
+.hero h1{font-size:clamp(1.5rem,3vw,2.05rem)}
+.hero .lede{margin:8px 0 0;max-width:62ch}
+.hero-art{max-height:190px}
+.stats{margin-top:12px;gap:8px}
+.stats li{flex-direction:row;align-items:baseline;gap:6px;padding:6px 10px}
+.stats strong{font-size:1.05rem}
+.ask{margin-top:14px}
+@media (max-width:860px){.hero{grid-template-columns:minmax(0,1fr) 28%}}
+@media (max-width:560px){.hero{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:150px;max-height:120px}.stats li{flex-direction:column;gap:0}}
+.stats span{white-space:nowrap}
+/* Phone: the greeting already explains the site, so drop the picture and intro text to bring the question box up */
+@media (max-width:560px){.hero-art,.hero .lede{display:none}.stats li{flex-direction:row;gap:6px}.hero h1{font-size:1.45rem}}
+@media (max-width:1180px){.stats li{flex-direction:column;gap:0}.stats span{white-space:normal}}
+@media (max-width:560px){.hero .stats{display:none}}

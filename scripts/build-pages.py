@@ -83,7 +83,7 @@ def page(path, title, desc, body, crumbs, jsonld=None):
 </head>
 <body class="seo">
 <header><div class="wrap">
-  <a class="brand" href="/" aria-label="Dubai School Fees home">{LOGO}<span>Dubai School Fees</span><small>Dubai</small><span class="ai-pill">AI</span></a>
+  <a class="brand" href="/" aria-label="Dubai School Fees home">{LOGO}<span>Dubai School Fees</span><span class="ai-pill">AI</span></a>
   <nav aria-label="Main"><a href="/#ask">Ask AI</a><a href="/schools">Schools</a><a href="/areas">Areas</a><a href="/curriculum">Curricula</a></nav>
 </div></header>
 <main class="wrap page">
