@@ -24,7 +24,7 @@ export function chain(order = env.AI_ORDER) {
     anthropic: env.ANTHROPIC_API_KEY ? [{ id: `anthropic:${env.ANTHROPIC_MODEL || "claude-haiku-5-5"}`, run: anthropic }] : [],
   };
   const geminiModels = env.GEMINI_API_KEY ? (env.GEMINI_MODELS ? env.GEMINI_MODELS.split(",").map(s => s.trim()).filter(Boolean) : DEFAULT_GEMINI) : [];
-  const g = m => ({ id: `gemini:${m}`, run: (s, t) => gemini(m, s, t) });
+  const g = m => ({ id: `gemini:${m}`, run: (s, t, meter) => gemini(m, s, t, meter) });
   if (order) {
     return order.split(",").map(s => s.trim()).flatMap(s => s.startsWith("gemini:") ? (env.GEMINI_API_KEY ? [g(s.slice(7))] : []) : (steps[s] || []));
   }
@@ -42,27 +42,34 @@ const COOL_MS = { quota: 15 * 60_000, busy: 60_000, slow: 5 * 60_000, missing: 6
 export async function complete(system, turns, order) {
   const steps = chain(order);
   if (!steps.length) throw new ProviderError("No AI provider is configured. Set GEMINI_API_KEY (free), GROQ_API_KEY or CLOUDFLARE_API_TOKEN.", 500);
-  const started = Date.now(); let last;
+  const started = Date.now(); let last; const attempts = [];   // every model tried, for the admin's capacity view
   for (const step of steps) {
     if ((cooling.get(step.id) || 0) > Date.now()) continue;
     if (Date.now() - started > 22000) break;                       // keep inside the function's time limit
-    try { return { text: await step.run(system, turns), model: step.id }; }
+    const meter = {};
+    try { const text = await step.run(system, turns, meter); attempts.push({ model: step.id, ok: 1, ...meter }); return { text, model: step.id, attempts }; }
     catch (e) {
-      last = e;
+      last = e; attempts.push({ model: step.id, ok: 0, kind: e.kind || "error", ...meter });
       if (e.kind) cooling.set(step.id, Date.now() + COOL_MS[e.kind]);
       console.warn(`AI step ${step.id} failed (${e.kind || "error"}): ${e.message.slice(0, 160)}`);
     }
   }
-  const e = new ProviderError("Every AI model is busy or out of free quota right now.", 503); e.allBusy = true; e.cause = last; throw e;
+  const e = new ProviderError("Every AI model is busy or out of free quota right now.", 503); e.allBusy = true; e.cause = last; e.attempts = attempts; throw e;
 }
 
-async function post(url, headers, body) {
+async function post(url, headers, body, meter = {}) {
   const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), PER_CALL_MS);
   let r;
   try { r = await fetch(url, { method: "POST", signal: ctl.signal, headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) }); }
   catch (err) { const e = new ProviderError(err.name === "AbortError" ? "timed out" : err.message, 503); e.kind = err.name === "AbortError" ? "slow" : "busy"; throw e; }
   finally { clearTimeout(timer); }
   const data = await r.json().catch(() => ({}));
+  // What the provider says is left (Groq sends these headers; others don't)
+  const h = n => r.headers?.get?.(n);
+  if (h("x-ratelimit-remaining-requests")) Object.assign(meter, { left_day: Number(h("x-ratelimit-remaining-requests")), limit_day: Number(h("x-ratelimit-limit-requests")) || null,
+    left_tokens_min: Number(h("x-ratelimit-remaining-tokens")) || null });
+  const u = data.usage || data.usageMetadata;
+  if (u) Object.assign(meter, { tin: u.prompt_tokens ?? u.input_tokens ?? u.promptTokenCount ?? 0, tout: u.completion_tokens ?? u.output_tokens ?? u.candidatesTokenCount ?? 0 });
   if (r.ok) return data;
   const msg = data?.error?.message || data?.errors?.[0]?.message || `HTTP ${r.status}`;
   const e = new ProviderError(`AI provider error ${r.status}: ${msg}`, 502);
@@ -76,7 +83,7 @@ async function post(url, headers, body) {
 const THINKING_OK = new Map();
 const empty = () => new ProviderError("The AI returned an empty answer.", 502);
 
-async function gemini(model, system, turns) {
+async function gemini(model, system, turns, meter) {
   const gemma = /^gemma/.test(model);
   const contents = turns.map(t => ({ role: t.role === "assistant" ? "model" : "user", parts: [{ text: t.content }] }));
   // Gemma on the Gemini API takes no system instruction: put the rules in the first user turn instead.
@@ -94,7 +101,7 @@ async function gemini(model, system, turns) {
     : /flash/.test(model) ? [{ thinkingBudget: 0 }, null] : [null];
   let data, i = THINKING_OK.get(model) ?? 0;
   for (; i < options.length; i++) {
-    try { data = await post(url, headers, body(options[i])); THINKING_OK.set(model, i); break; }
+    try { data = await post(url, headers, body(options[i]), meter); THINKING_OK.set(model, i); break; }
     catch (e) { if (e.httpStatus !== 400 || i === options.length - 1) throw e; }
   }
   const parts = data.candidates?.[0]?.content?.parts || [];
@@ -103,21 +110,21 @@ async function gemini(model, system, turns) {
   return text;
 }
 
-async function openaiStyle(url, key, model, system, turns) {
+async function openaiStyle(url, key, model, system, turns, meter) {
   const data = await post(url, { authorization: `Bearer ${key}` },
-    { model, temperature: 0.2, max_tokens: 2048, messages: [{ role: "system", content: system }, ...turns] });
+    { model, temperature: 0.2, max_tokens: 2048, messages: [{ role: "system", content: system }, ...turns] }, meter);
   const text = data.choices?.[0]?.message?.content?.trim();
   if (!text) throw empty();
   return text;
 }
-const groq = (s, t) => openaiStyle("https://api.groq.com/openai/v1/chat/completions", env.GROQ_API_KEY, env.GROQ_MODEL || "openai/gpt-oss-120b", s, t);
-const cloudflare = (s, t) => openaiStyle(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
-  env.CLOUDFLARE_API_TOKEN, env.CLOUDFLARE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast", s, t);
+const groq = (s, t, m) => openaiStyle("https://api.groq.com/openai/v1/chat/completions", env.GROQ_API_KEY, env.GROQ_MODEL || "openai/gpt-oss-120b", s, t, m);
+const cloudflare = (s, t, m) => openaiStyle(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
+  env.CLOUDFLARE_API_TOKEN, env.CLOUDFLARE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast", s, t, m);
 
-async function anthropic(system, turns) {
+async function anthropic(system, turns, meter) {
   const data = await post("https://api.anthropic.com/v1/messages",
     { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-    { model: env.ANTHROPIC_MODEL || "claude-haiku-5-5", max_tokens: 2048, temperature: 0.2, system, messages: turns });
+    { model: env.ANTHROPIC_MODEL || "claude-haiku-5-5", max_tokens: 2048, temperature: 0.2, system, messages: turns }, meter);
   const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
   if (!text) throw empty();
   return text;

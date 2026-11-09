@@ -19,7 +19,7 @@ button{cursor:pointer;background:var(--accent);color:#fff;border-color:var(--acc
 table{border-collapse:collapse;width:100%;font-size:.88rem}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--muted);font-weight:600;white-space:nowrap}td.q{min-width:260px}td.a{max-width:420px;color:var(--muted)}
 .bars div{display:flex;gap:8px;align-items:center;margin:3px 0}.bars span:first-child{width:200px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar{height:10px;background:var(--accent);border-radius:5px}.err{color:var(--bad)}details summary{cursor:pointer;color:var(--accent)}
+.bar{height:10px;background:var(--accent);border-radius:5px}.err{color:var(--bad)}.ok{color:var(--accent)}.small{font-size:.82rem}textarea{width:100%;min-height:120px;font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}td.n{text-align:right;white-space:nowrap}details summary{cursor:pointer;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -48,15 +48,47 @@ function table(rows){
 }
 function bars(items,label){ const max=Math.max(1,...items.map(i=>i.n));
   return `<div class="bars">${items.map(i=>`<div><span title="${esc(i[label])}">${esc(i[label]??"(none)")}</span><span class="bar" style="width:${Math.round(i.n/max*300)}px"></span><span>${i.n}</span></div>`).join("")||'<p class="muted">Nothing yet.</p>'}</div>`; }
+const num=v=>v==null?"–":Number(v).toLocaleString("en-US");
+const of=(used,lim)=>lim==null?num(used):`${num(used)} / ${num(lim)}`;
+function capacity(q){
+  if(!q||q.error) return `<h2>AI capacity</h2><p class="err">${esc(q?.error||"Not available")}</p>`;
+  const t=q.totals,si=q.site;
+  const rows=q.models.map(m=>{const d=m.day;
+    const today=d.unit==="neurons"?`${of(d.used,d.limit)} neurons<br><span class="muted small">${num(d.requests)} calls · ~${num(d.perAnswer)} per answer</span>`
+      :`${of(d.requests,d.limit)} calls${d.tpd?`<br><span class="muted small">${of(d.tokens,d.tpd)} tokens</span>`:""}${d.fromProvider?`<br><span class="muted small">Groq says ${num(d.fromProvider.requestsLeft)} calls left</span>`:""}`;
+    const fails=m.failures24h.map(f=>`${f.n}× ${esc(f.kind)}`).join(", ");
+    return `<tr><td>${esc(m.model)}${m.inChain?"":' <span class="muted">(not in use)</span>'}</td>
+      <td class="n">${of(m.minute.requests,m.minute.rpm)}${m.minute.tpm?`<br><span class="muted small">${of(m.minute.tokens,m.minute.tpm)} tok</span>`:""}</td>
+      <td class="n">${num(m.hour.requests)}</td><td class="n">${today}<br><span class="muted small">resets ${esc(d.resets)}</span></td>
+      <td class="n"><b>${d.answersLeft==null?'<span class="muted">set limit ↓</span>':num(d.answersLeft)}</b></td>
+      <td class="n">${num(m.month.answered)} answered<br><span class="muted small">${num(m.month.requests)} calls</span></td>
+      <td class="${fails?"err":"muted"} small">${fails||"none"}</td></tr>`;}).join("");
+  return `<h2>AI capacity (free quotas)</h2>
+  <div class="tiles"><div class="tile"><b>≈ ${num(t.answersLeftToday)}</b>AI answers left today${t.modelsWithUnknownLimit.length?`<br><span class="muted small">+ ${t.modelsWithUnknownLimit.length} model(s) with no limit set</span>`:""}</div>
+    <div class="tile"><b>${num(si.aiCallsToday)} / ${num(si.dailyCap)}</b>site daily cap (${num(si.capLeft)} left)<br><span class="muted small">${num(si.perVisitorCap)} per visitor a day</span></div>
+    <div class="tile"><b>${num(si.monthAiAnswers)}</b>AI answers this month<br><span class="muted small">of ${num(si.monthQuestions)} questions</span></div></div>
+  <p class="muted small">Used counts are this site's own calls. "Answers left" = the tightest of the day's request, token or neuron limit, using the average size of an answer. A model that runs out passes the question to the next one; ${esc("quota")} in the last column means a model said it was out.</p>
+  <div class="wrap"><table><tr><th>Model (in order tried)</th><th>This minute</th><th>Last hour</th><th>Today</th><th>Answers left today</th><th>This month</th><th>Errors (24 h)</th></tr>${rows}</table></div>
+  <details style="margin-top:10px"><summary>Edit free-tier limits</summary>
+    <p class="muted small">Gemini doesn't publish fixed free limits; copy yours from <a href="https://aistudio.google.com/rate-limit" target="_blank" rel="noopener">AI Studio → Rate limits</a>. Fields: rpm, rpd, tpm, tpd (and neurons_day for Cloudflare). Key by provider (<code>gemini</code>) or exact model (<code>gemini:gemini-3.5-flash-lite</code>).</p>
+    <textarea id="limits">${esc(JSON.stringify(Object.keys(q.limits.saved).length?q.limits.saved:Object.fromEntries(q.models.filter(m=>m.provider==="gemini").map(m=>[m.model,{rpm:null,rpd:null}])),null,1))}</textarea>
+    <div class="row"><button type="button" id="saveLimits">Save limits</button><span id="limMsg" class="small"></span></div>
+  </details>`;
+}
+document.addEventListener("click",async e=>{ if(e.target.id!=="saveLimits") return;
+  let lim; try{ lim=JSON.parse($("#limits").value); }catch{ $("#limMsg").className="err small"; $("#limMsg").textContent="That isn't valid JSON."; return; }
+  const r=await fetch("/api/admin?view=limits",{method:"POST",headers:{"x-admin-key":$("#pw").value,"content-type":"application/json"},body:JSON.stringify({limits:lim})});
+  const d=await r.json(); $("#limMsg").className=(d.ok?"ok":"err")+" small"; $("#limMsg").textContent=d.ok?"Saved.":d.error; if(d.ok) load(); });
 async function load(e){
   e?.preventDefault(); $("#msg").textContent=""; $("#out").innerHTML='<p class="muted">Loading…</p>';
   try{ sessionStorage.setItem("adm",$("#pw").value); }catch{}
-  const [s,recent,bad]=await Promise.all(["summary","recent","bad"].map(v=>get(v).then(r=>r.json())));
+  const [s,recent,bad,quota]=await Promise.all(["summary","recent","bad","quota"].map(v=>get(v).then(r=>r.json())));
   if(s.error){ $("#out").innerHTML=""; $("#msg").textContent=s.error; return; }
   const t=s.totals||{};
   $("#out").innerHTML=`<div class="tiles">
     <div class="tile"><b>${t.n||0}</b>questions</div><div class="tile"><b>${s.aiCallsToday}</b>AI calls today</div>
     <div class="tile"><b>${t.up||0} / ${t.down||0}</b>👍 / 👎</div><div class="tile"><b>${t.avg_ms?(t.avg_ms/1000).toFixed(1)+" s":"–"}</b>average answer time</div></div>
+    ${capacity(quota)}
     <h2>Questions per day</h2>${bars(s.byDay,"day")}
     <h2>Answered by</h2><p class="muted">gemini:/groq:/cloudflare: = AI model · rules = fixed reply · cache = repeated question · search:* = AI busy or daily cap reached</p>${bars(s.byProvider,"provider")}
     <h2>Most asked areas</h2>${bars(s.places,"place")}

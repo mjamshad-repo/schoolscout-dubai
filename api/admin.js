@@ -1,7 +1,8 @@
-// GET /api/admin?view=summary|recent|bad|csv&days=7   header x-admin-key: <ADMIN_PASSWORD>
+// GET /api/admin?view=summary|recent|bad|csv|quota&days=7   POST ?view=limits {limits:{...}} saves free-tier limits   header x-admin-key: <ADMIN_PASSWORD>
 // Private stats for the site owner. Off unless ADMIN_PASSWORD (12+ characters) is set.
 import { timingSafeEqual, createHash } from "node:crypto";
-import { query, storeEnabled } from "./_store.js";
+import { query, storeEnabled, setSetting } from "./_store.js";
+import { quotaReport } from "./_quota.js";
 import { clientIp } from "./_guard.js";
 
 const fails = new Map();
@@ -24,6 +25,18 @@ export default async function handler(req, res) {
   const since = `datetime('now', '-${days} day')`;
   const view = String(req.query?.view || "summary");
   try {
+    if (view === "quota") return res.status(200).json(await quotaReport());
+    if (view === "limits" && req.method === "POST") {
+      let b = req.body; if (typeof b === "string") { try { b = JSON.parse(b); } catch { b = {}; } }
+      const lim = b?.limits;
+      const okNum = v => v === null || (typeof v === "number" && v >= 0 && v < 1e9);
+      const valid = lim && typeof lim === "object" && !Array.isArray(lim) && Object.keys(lim).length <= 20 &&
+        Object.entries(lim).every(([k, o]) => /^[\w:@./-]{2,80}$/.test(k) && o && typeof o === "object" &&
+          Object.entries(o).every(([f, v]) => /^(rpm|rpd|tpm|tpd|neurons_day|neurons_in_per_m|neurons_out_per_m)$/.test(f) && okNum(v)));
+      if (!valid) return res.status(400).json({ error: "Limits must look like {\"gemini:gemini-3.5-flash-lite\": {\"rpm\": 15, \"rpd\": 1000}}. Allowed fields: rpm, rpd, tpm, tpd, neurons_day." });
+      await setSetting("limits", JSON.stringify(lim));
+      return res.status(200).json({ ok: true });
+    }
     if (view === "summary") {
       const [totals, byProvider, byDay, places, today] = await Promise.all([
         query(`SELECT COUNT(*) n, SUM(vote = 1) up, SUM(vote = -1) down, ROUND(AVG(ms)) avg_ms FROM asks WHERE at >= ${since}`),

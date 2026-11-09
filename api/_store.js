@@ -33,6 +33,10 @@ function db() {
       retrieved TEXT, place TEXT, grade INTEGER, max_km REAL, ms INTEGER, turn INTEGER, vote INTEGER)`);
     await q(`CREATE INDEX IF NOT EXISTS asks_at ON asks(at)`);
     await q(`CREATE TABLE IF NOT EXISTS counters (day TEXT NOT NULL, k TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (day, k))`);
+    await q(`CREATE TABLE IF NOT EXISTS model_calls (at TEXT NOT NULL, model TEXT NOT NULL, ok INTEGER, kind TEXT, tin INTEGER, tout INTEGER,
+      left_day INTEGER, limit_day INTEGER, left_tokens_min INTEGER)`);
+    await q(`CREATE INDEX IF NOT EXISTS model_calls_at ON model_calls(at)`);
+    await q(`CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT)`);
     return q;
   })().catch(e => { ready = null; throw e; });
   return ready;
@@ -71,3 +75,17 @@ export async function setVote(id, vote) {
   await query(`UPDATE asks SET vote = ? WHERE id = ?`, [vote, id]);
   return true;
 }
+
+// One row per AI model tried (answered or failed), so the admin page can show how much free quota is used and left.
+export async function logModelCalls(attempts) {
+  if (!storeEnabled() || !attempts?.length) return;
+  const at = new Date().toISOString(), cols = ["model", "ok", "kind", "tin", "tout", "left_day", "limit_day", "left_tokens_min"];
+  try {
+    await query(`INSERT INTO model_calls (at, ${cols.join(", ")}) VALUES ${attempts.map(() => `(?, ${cols.map(() => "?").join(", ")})`).join(", ")}`,
+      attempts.flatMap(a => [at, ...cols.map(c => a[c] ?? null)]));
+    if (Math.random() < 0.01) query(`DELETE FROM model_calls WHERE at < datetime('now', '-400 day')`).catch(() => {});
+  } catch (e) { console.warn("model log skipped:", e.message); }
+}
+
+export async function getSetting(k) { return (await query(`SELECT v FROM settings WHERE k = ?`, [k]))[0]?.v ?? null; }
+export async function setSetting(k, v) { await query(`INSERT INTO settings (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v`, [k, v]); }

@@ -6,7 +6,7 @@ import { parseNeeds, retrieve, recordText, radiusNote, otherEmirate, needsClarif
 import { RULES } from "./_prompt.js";
 import { complete } from "./_llm.js";
 import { clientIp, originAllowed, turnstileOk, tooFast, caps } from "./_guard.js";
-import { countAiCall, logAsk } from "./_store.js";
+import { countAiCall, logAsk, logModelCalls } from "./_store.js";
 
 const clip = (s, n) => String(s ?? "").slice(0, n);
 // Same first question within 30 minutes (e.g. the "Try asking" buttons): reuse the answer, no AI call
@@ -35,9 +35,11 @@ export default async function handler(req, res) {
 
   const { hits, needs } = retrieve(SCHOOLS, question, history.filter(t => t.role === "user").map(t => t.content));
   const meta = { retrieved: hits.map(h => h.s.id), place: needs.place?.label || null, grade: needs.grade ?? null, maxKm: needs.place ? needs.maxKm ?? null : null };
+  let calls = [];   // AI models tried for this question
   const finish = async (answer, provider, m = meta) => {
     const tag = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production" ? `[${process.env.VERCEL_ENV}] ` : "";
-    const logId = await logAsk({ question: tag + question, answer, provider, ...m, ms: Date.now() - started, turn: history.filter(t => t.role === "user").length + 1 });
+    const [logId] = await Promise.all([logAsk({ question: tag + question, answer, provider, ...m, ms: Date.now() - started, turn: history.filter(t => t.role === "user").length + 1 }),
+      logModelCalls(calls)]);   // previews use the same keys, so their calls count too
     res.status(200).json({ answer, ...m, provider, logId });
   };
   const none = { retrieved: [], place: null, grade: null, maxKm: null };
@@ -64,11 +66,13 @@ export default async function handler(req, res) {
   try {
     // Preview deployments only (behind Vercel login): a tester can pick the AI order for one request
     const testOrder = process.env.VERCEL_ENV === "preview" ? clip(req.headers["x-test-ai-order"], 200) || undefined : undefined;
-    const { text, model } = await complete(RULES, turns, testOrder);
+    const { text, model, attempts } = await complete(RULES, turns, testOrder);
+    calls = attempts;
     if (key) { cache.set(key, { answer: text, at: Date.now() }); if (cache.size > 300) cache.delete(cache.keys().next().value); }
     return finish(text, model);
   } catch (e) {
     console.error("ask failed:", e.message, e.cause?.message || "");
+    calls = e.attempts || [];
     if (hits.length) return finish(searchOnlyAnswer(hits, needs), "search:busy");
     res.status(503).json({ error: "Something went wrong. Try again in a moment.", ...meta });
   }
