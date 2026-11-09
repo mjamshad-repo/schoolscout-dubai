@@ -212,6 +212,8 @@ th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
   .msg.bot .body tr{margin:0}
 }
 .choices{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.choices .chip{border-color:var(--accent);color:var(--accent)}.choices .chip:disabled{opacity:.5;cursor:default}
+/* The chat panel used to stretch to the height of the side column, leaving an empty gap above the question box */
+.ask{align-items:start}.thread{min-height:0}
 
 /* static pages */
 .page .rating{display:inline-block;color:#fff;padding:1px 9px;border-radius:999px;font-size:.82rem;font-weight:600;line-height:1.5}
