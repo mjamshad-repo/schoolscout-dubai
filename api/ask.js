@@ -2,7 +2,7 @@
 // The AI keys never leave the server, and retrieval runs here, so the browser cannot send its own prompt.
 // Order: guards -> rule answers (no AI) -> cache -> daily caps -> AI with fallbacks -> search table if all are busy.
 import { SCHOOLS } from "./_schools.js";
-import { parseNeeds, retrieve, recordText, radiusNote, otherEmirate, needsClarifying, searchOnlyAnswer } from "./_retrieval.js";
+import { parseNeeds, retrieve, recordText, radiusNote, otherEmirate, needsClarifying, vagueRating, searchOnlyAnswer } from "./_retrieval.js";
 import { RULES } from "./_prompt.js";
 import { complete } from "./_llm.js";
 import { clientIp, originAllowed, turnstileOk, tooFast, caps } from "./_guard.js";
@@ -45,6 +45,8 @@ export default async function handler(req, res) {
   // 1. Answers that need no AI
   const other = otherEmirate(question, parseNeeds(question, SCHOOLS));
   if (other) return finish(other, "rules", none);
+  const vague = vagueRating(question);
+  if (vague) return finish(vague.answer, "rules", { ...none, choices: vague.choices });
   const clarify = needsClarifying(needs, SCHOOLS);
   if (clarify) return finish(clarify, "rules", none);
   const key = !history.length && !req.headers["x-test-ai-order"] && cacheKey(question), hit = key && cache.get(key);

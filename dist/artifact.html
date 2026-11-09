@@ -221,6 +221,7 @@ th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
   .msg.bot .body tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .msg.bot .body tr{margin:0}
 }
+.choices{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.choices .chip{border-color:var(--accent);color:var(--accent)}.choices .chip:disabled{opacity:.5;cursor:default}
 </style>
 <header><div class="wrap">
   <a class="brand" href="#ask" aria-label="Dubai School Fees home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--accent)"/><path d="M32 15 7 26.5 32 38l25-11.5z" fill="var(--on-accent)"/><path d="M17 32v9.5c0 3.8 6.7 7.5 15 7.5s15-3.7 15-7.5V32l-15 7z" fill="var(--on-accent)" opacity=".86"/><path d="M52.5 28v11" stroke="var(--sun)" stroke-width="3" stroke-linecap="round"/><circle cx="52.5" cy="41" r="3.2" fill="var(--sun)"/><path d="M51 6.5l1.8 4.4 4.4 1.8-4.4 1.8L51 18.9l-1.8-4.4-4.4-1.8 4.4-1.8z" fill="var(--sun)"/></svg><span>Dubai School Fees</span><small>Dubai</small><span class="ai-pill">AI</span></a>
@@ -581,6 +582,25 @@ function otherEmirate(question, needs) {
       : `If you're open to a school in Dubai, tell me the Dubai area, curriculum, your child's grade and your budget.`);
 }
 
+// "Excellent", "top rated", "5 star"... are not KHDA ratings. Ask which real rating the parent means, with one-tap choices.
+// Returns { answer, choices: [{ label, q }] } or null. choices[].q is the parent's question rewritten with that rating.
+const VAGUE_RATING = /(?:\b(with|has|having)\s+(?:an?\s+)?)?\b(?:(excellent|superb|great|top|high(?:ly)?|best|well)[- ]?(rated|rating|ranked)|(excellent|superb)|(?:five|5)[- ]?stars?)\b/i;
+function vagueRating(question) {
+  const t = String(question), m = t.match(VAGUE_RATING);
+  if (!m || /\b(outstanding|very good|good|acceptable|weak)\b/i.test(t)) return null;
+  const adj = (m[2] || m[4] || "").toLowerCase();
+  const word = m[4] ? adj[0].toUpperCase() + adj.slice(1) : `"${m[0].replace(/^(with|has|having)\s+(an?\s+)?/i, "").toLowerCase()}"`;
+  // "with an excellent rating" -> "rated Outstanding"; "top rated school" / "excellent school" / "5 star school" -> "Outstanding school"
+  const asRated = m[1] || /rating/i.test(m[3] || "");
+  const put = label => (label ? t.replace(m[0], asRated ? `rated ${label}` : label) : t.replace(m[0], " ")).replace(/\s{2,}/g, " ").trim();
+  const choices = [["Outstanding", "Outstanding"], ["Very Good or better", "Very Good or better"], ["Good or better", "Good or better"], ["Any rating", ""]]
+    .map(([label, r]) => ({ label, q: put(r) }));
+  return {
+    answer: `KHDA doesn't use ${word} as a rating. Its inspection ratings are, from best to lowest: **Outstanding**, **Very Good**, **Good**, **Acceptable**, **Weak** and **Very Weak**. New schools show **Not yet inspected**.\n\nWhich minimum rating do you want? Pick one below, or reply with it.`,
+    choices,
+  };
+}
+
 // Nothing to rank on yet (no budget, curriculum, grade, rating, place, distance, or school name): ask instead of calling the AI.
 function needsClarifying(needs, schools) {
   if (["budget", "curriculum", "minRating", "place", "grade", "maxKm"].some(k => needs[k] !== undefined)) return null;
@@ -615,6 +635,11 @@ Use ONLY those records. Never add schools, fees, ratings or locations from outsi
 If the question is too vague to rank schools (two or more of budget, curriculum, child's grade, area are missing
 across the whole conversation), ask for them in one short question and stop.
 
+If the parent asks about one particular school (its fee, rating or details, e.g. "fees at QE school for KG1"), that school is the answer:
+start with one or two sentences giving exactly what was asked for that school, from its record. Then add a short table of
+at most 3 comparable schools (same curriculum, nearby) as alternatives, and make the Next step about the school they asked about.
+If no record matches the school they named, say it was not found in the records and ask for its full name; never substitute another school.
+
 Otherwise answer in Markdown, under 250 words plus the table:
 **Shortlist** - a table: School | Rating (year) | Annual fee (AED) | Area / distance | Why it fits.
 - Area / distance cell: short, e.g. "Jumeirah Village Circle, 2.2 km".
@@ -624,7 +649,9 @@ Cite each school
 with its record ID in brackets, e.g. [SCH008]. Rank by fit: curriculum, then within budget, then distance, then rating.
 Leave out records that clearly do not fit.
 **Watch-outs** - near misses, schools whose fee is not on file, old inspections, fees that rise sharply in later grades.
-**Next step** - one practical action, e.g. call or visit the website of the top pick.
+**Next step** - one practical action about the first school in the table (or the school the parent asked about), e.g. ask that school
+for seat availability for the child's grade, or book a visit. Never point to a school other than that one without saying why
+in the same sentence (e.g. "if you want an inspected school, the closest Outstanding one is ...").
 
 Fees: when a record gives the fee for the parent's grade, use that figure in the table and for the budget check
 (say which grade it is for). If a record says the school does NOT offer that grade, leave it out. If a record says
@@ -891,6 +918,7 @@ async function answerWeb(q, signal, onText){
 }
 async function answerArtifact(q, signal, onText){
   if(!sampleFn) throw new Error("AI answers need this page open inside Claude. Explore and Compare still work.");
+  const vague=vagueRating(q); if(vague) return {answer:vague.answer,choices:vague.choices,retrieved:[]};
   const prev=turns.filter(t=>t.role==="user").map(t=>t.content);
   const {hits,needs}=retrieve(SCHOOLS,q,prev);
   onText(null,{retrieved:hits.map(h=>h.s.id),place:needs.place?.label,grade:needs.grade,maxKm:needs.place?needs.maxKm:null});
@@ -912,7 +940,7 @@ async function ask(q){
   try{
     const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade,meta.maxKm); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
     showMeta(data.retrieved,data.place,data.grade,data.maxKm);
-    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE+(data.logId&&CFG.feedback?feedbackHtml(data.logId):"");
+    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+(data.choices?.length?`<div class="choices">${data.choices.map(c=>`<button class="chip" type="button" data-q="${esc(c.q)}">${esc(c.label)}</button>`).join("")}</div>`:"")+ANSWER_NOTE+(data.logId&&CFG.feedback?feedbackHtml(data.logId):"");
     makeSortable(body);
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
@@ -925,6 +953,7 @@ async function ask(q){
 $("#composer").addEventListener("submit",e=>{e.preventDefault();const q=$("#q").value;$("#q").value="";ask(q)});
 $("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#composer").requestSubmit()}});
 $("#stop").onclick=()=>ctl?.abort();
+$("#thread")?.addEventListener("click",e=>{const b=e.target.closest(".choices .chip"); if(b){ b.parentElement.querySelectorAll("button").forEach(x=>x.disabled=true); ask(b.dataset.q);} });
 document.addEventListener("click",e=>{
   const id=e.target.closest?.("[data-rid]")?.dataset.rid; if(!id) return;
   location.hash="explore"; ["#fCur","#fNear","#fKm","#fFee","#fTxt","#fGrade","#fSort"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;

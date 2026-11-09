@@ -1,6 +1,6 @@
 // Retrieval checks against the KHDA register data. Run: npm test
 import { SCHOOLS } from "../api/_schools.js";
-import { retrieve } from "../api/_retrieval.js";
+import { retrieve, vagueRating } from "../api/_retrieval.js";
 
 const name = id => SCHOOLS.find(s => s.id === id)?.name;
 const cases = [
@@ -32,5 +32,22 @@ for (const c of cases) {
   if (!ok) fail++;
   console.log(`${ok ? "PASS" : "FAIL"}  ${c.q}${needs.place ? `   [place: ${needs.place.label}]` : ""}\n      -> ${hits.slice(0, 6).map(h => `${h.s.name} (${h.score}${h.km != null ? `, ${h.km}km` : ""}${needs.grade != null && h.s.fees_by_grade ? `, grade fee ${h.s.fees_by_grade[needs.grade] ?? "n/a"}` : h.s.fee_min_aed != null ? `, AED ${h.s.fee_min_aed}` : ", no fee"})`).join(" | ")}`);
 }
+const vr = [
+  ["British school with excellent rating near Al Barsha for Year 2", "British school rated Outstanding near Al Barsha for Year 2"],
+  ["excellent CBSE school in Qusais", "Outstanding CBSE school in Qusais"],
+  ["top rated IB school under 80k", "Outstanding IB school under 80k"],
+  ["5 star American school", "Outstanding American school"],
+  ["Indian school with a high rating for KG2", "Indian school rated Outstanding for KG2"],
+];
+for (const [q, want] of vr) {
+  const v = vagueRating(q), ok = v && v.choices[0].q === want && v.choices.length === 4 && parseOk(v.choices[0].q);
+  if (!ok) fail++;
+  console.log(`${ok ? "PASS" : "FAIL"}  vague rating: ${q} -> ${v?.choices.map(c => c.q).join(" / ")}`);
+}
+for (const q of ["Outstanding British school", "best CBSE school near Mirdif", "Very Good or better school, excellent buses"]) {
+  const ok = vagueRating(q) === null; if (!ok) fail++;
+  console.log(`${ok ? "PASS" : "FAIL"}  no rating question for: ${q}`);
+}
+function parseOk(q) { return retrieve(SCHOOLS, q, []).needs.minRating === 5; }
 console.log(fail ? `\n${fail} failing` : "\nall retrieval checks pass");
 process.exit(fail ? 1 : 0);

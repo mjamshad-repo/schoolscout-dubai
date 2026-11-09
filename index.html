@@ -233,6 +233,7 @@ th.sortable:hover,th.sortable:focus-visible{color:var(--accent)}
   .msg.bot .body tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .msg.bot .body tr{margin:0}
 }
+.choices{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.choices .chip{border-color:var(--accent);color:var(--accent)}.choices .chip:disabled{opacity:.5;cursor:default}
 </style>
 </head>
 <body>
@@ -649,6 +650,7 @@ async function answerWeb(q, signal, onText){
 }
 async function answerArtifact(q, signal, onText){
   if(!sampleFn) throw new Error("AI answers need this page open inside Claude. Explore and Compare still work.");
+  const vague=vagueRating(q); if(vague) return {answer:vague.answer,choices:vague.choices,retrieved:[]};
   const prev=turns.filter(t=>t.role==="user").map(t=>t.content);
   const {hits,needs}=retrieve(SCHOOLS,q,prev);
   onText(null,{retrieved:hits.map(h=>h.s.id),place:needs.place?.label,grade:needs.grade,maxKm:needs.place?needs.maxKm:null});
@@ -670,7 +672,7 @@ async function ask(q){
   try{
     const data = await (MODE==="web"?answerWeb:answerArtifact)(q, ctl.signal, (text,meta)=>{ if(meta) showMeta(meta.retrieved,meta.place,meta.grade,meta.maxKm); if(text){ body.classList.remove("thinking"); body.innerHTML=md(text);} });
     showMeta(data.retrieved,data.place,data.grade,data.maxKm);
-    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+ANSWER_NOTE+(data.logId&&CFG.feedback?feedbackHtml(data.logId):"");
+    body.classList.remove("thinking"); body.innerHTML=md(data.answer)+(data.choices?.length?`<div class="choices">${data.choices.map(c=>`<button class="chip" type="button" data-q="${esc(c.q)}">${esc(c.label)}</button>`).join("")}</div>`:"")+ANSWER_NOTE+(data.logId&&CFG.feedback?feedbackHtml(data.logId):"");
     makeSortable(body);
     turns.push({role:"user",content:q},{role:"assistant",content:data.answer});
     if(turns.length>8) turns=turns.slice(-8);
@@ -683,6 +685,7 @@ async function ask(q){
 $("#composer").addEventListener("submit",e=>{e.preventDefault();const q=$("#q").value;$("#q").value="";ask(q)});
 $("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#composer").requestSubmit()}});
 $("#stop").onclick=()=>ctl?.abort();
+$("#thread")?.addEventListener("click",e=>{const b=e.target.closest(".choices .chip"); if(b){ b.parentElement.querySelectorAll("button").forEach(x=>x.disabled=true); ask(b.dataset.q);} });
 document.addEventListener("click",e=>{
   const id=e.target.closest?.("[data-rid]")?.dataset.rid; if(!id) return;
   location.hash="explore"; ["#fCur","#fNear","#fKm","#fFee","#fTxt","#fGrade","#fSort"].forEach(s=>$(s).value=""); $("#fRat").value="0"; $("#fNew").checked=true;

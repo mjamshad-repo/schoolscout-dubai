@@ -197,6 +197,25 @@ export function otherEmirate(question, needs) {
       : `If you're open to a school in Dubai, tell me the Dubai area, curriculum, your child's grade and your budget.`);
 }
 
+// "Excellent", "top rated", "5 star"... are not KHDA ratings. Ask which real rating the parent means, with one-tap choices.
+// Returns { answer, choices: [{ label, q }] } or null. choices[].q is the parent's question rewritten with that rating.
+const VAGUE_RATING = /(?:\b(with|has|having)\s+(?:an?\s+)?)?\b(?:(excellent|superb|great|top|high(?:ly)?|best|well)[- ]?(rated|rating|ranked)|(excellent|superb)|(?:five|5)[- ]?stars?)\b/i;
+export function vagueRating(question) {
+  const t = String(question), m = t.match(VAGUE_RATING);
+  if (!m || /\b(outstanding|very good|good|acceptable|weak)\b/i.test(t)) return null;
+  const adj = (m[2] || m[4] || "").toLowerCase();
+  const word = m[4] ? adj[0].toUpperCase() + adj.slice(1) : `"${m[0].replace(/^(with|has|having)\s+(an?\s+)?/i, "").toLowerCase()}"`;
+  // "with an excellent rating" -> "rated Outstanding"; "top rated school" / "excellent school" / "5 star school" -> "Outstanding school"
+  const asRated = m[1] || /rating/i.test(m[3] || "");
+  const put = label => (label ? t.replace(m[0], asRated ? `rated ${label}` : label) : t.replace(m[0], " ")).replace(/\s{2,}/g, " ").trim();
+  const choices = [["Outstanding", "Outstanding"], ["Very Good or better", "Very Good or better"], ["Good or better", "Good or better"], ["Any rating", ""]]
+    .map(([label, r]) => ({ label, q: put(r) }));
+  return {
+    answer: `KHDA doesn't use ${word} as a rating. Its inspection ratings are, from best to lowest: **Outstanding**, **Very Good**, **Good**, **Acceptable**, **Weak** and **Very Weak**. New schools show **Not yet inspected**.\n\nWhich minimum rating do you want? Pick one below, or reply with it.`,
+    choices,
+  };
+}
+
 // Nothing to rank on yet (no budget, curriculum, grade, rating, place, distance, or school name): ask instead of calling the AI.
 export function needsClarifying(needs, schools) {
   if (["budget", "curriculum", "minRating", "place", "grade", "maxKm"].some(k => needs[k] !== undefined)) return null;
