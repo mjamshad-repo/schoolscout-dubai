@@ -629,7 +629,7 @@ function searchOnlyAnswer(hits, needs, why = "busy") {
       : "Tap a record ID to open the school's card, or try again in a few minutes for a written comparison.");
 }
 
-const RULES = `You are the Dubai School Fees assistant (dubaischoolfees.com). You help parents shortlist private schools. You cover Dubai only, but don't mention that unless the parent asks about another emirate.
+const RULES = `You are Ezlyn, the AI-powered Dubai School Fees Expert on dubaischoolfees.com. If asked who you are, say you are Ezlyn. You help parents shortlist private schools. You cover Dubai only, but don't mention that unless the parent asks about another emirate.
 If the parent asks about a school or area in another emirate (Abu Dhabi, Sharjah, Ajman, Ras Al Khaimah, Fujairah, Umm Al Quwain), say plainly in one sentence that only Dubai is covered; then offer Dubai options only if they fit (e.g. Dubai schools near the Sharjah border for a Sharjah resident). Never present a Dubai school as being in another emirate.
 Each user turn contains the parent's question and a set of RETRIEVED SCHOOL RECORDS from KHDA's official register.
 Use ONLY those records. Never add schools, fees, ratings or locations from outside knowledge, even if you know them.
@@ -892,7 +892,7 @@ function makeSortable(root){
 const AVATAR='<span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.1 6.1 2.4-6.1 2.4L12 19.5l-2.4-6.1-6.1-2.4 6.1-2.4z" fill="currentColor"/><path d="M19 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" opacity=".7"/></svg></span>';
 function bubble(role,html){
   const d=document.createElement("div"); d.className="msg "+role;
-  d.innerHTML = role==="bot" ? `${AVATAR}<div class="bot-col"><div class="who">School Fees AI</div>${html}</div>` : html;
+  d.innerHTML = role==="bot" ? `${AVATAR}<div class="bot-col"><div class="who">Ezlyn AI</div>${html}</div>` : html;
   $("#thread").append(d); d.scrollIntoView({block:"nearest"}); return d; }
 const SAMPLE_ERR={not_granted:"Claude isn't allowed for this page. Allow it from the page's permissions to get answers; Explore and Compare still work.",
   sampling_disabled:"Claude isn't available for this account. Explore and Compare still work.",
@@ -988,7 +988,7 @@ function boot(){
   $("#nFees").textContent=$("#statFees").textContent=SCHOOLS.filter(s=>s.fee_min_aed!=null).length;
   { const yc={}; SCHOOLS.forEach(s=>{const m=(s.fee_source||"").match(/\((\d{4}-\d{2})\)/); if(m) yc[m[1]]=(yc[m[1]]||0)+1;}); const top=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0]; if(top) $("#statYear").textContent=top[0]; }
   $("#statOut").textContent=SCHOOLS.filter(s=>s.khda_rating==="Outstanding").length;
-  bubble("bot",`<div class="body"><p><strong>Hi, I'm the Dubai School Fees assistant.</strong> I know all ${SCHOOLS.length} KHDA-registered private schools in Dubai, with ratings, locations and contacts, and KHDA's official fees by grade for ${SCHOOLS.filter(s=>s.fee_min_aed!=null).length} of them. Tell me your budget, curriculum, your child's grade and where you live.</p></div>`);
+  bubble("bot",`<div class="body"><p><strong>Hi, I'm Ezlyn — your AI-powered Dubai School Fees Expert.</strong> I know all ${SCHOOLS.length} KHDA-registered private schools in Dubai, with ratings, locations and contacts, and KHDA's official fees by grade for ${SCHOOLS.filter(s=>s.fee_min_aed!=null).length} of them. Tell me your budget, curriculum, your child's grade and where you live.</p></div>`);
   renderExplore(); route();
 }
 if(MODE==="web"){

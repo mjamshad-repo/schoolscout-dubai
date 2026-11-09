@@ -39,7 +39,7 @@ behaviour = m => m === "gemma-4-31b-it" ? { status: 200, body: { candidates: [{ 
 let gemmaBody; const prev = globalThis.fetch;
 globalThis.fetch = async (url, opts) => { if (url.includes("gemma")) gemmaBody = JSON.parse(opts.body); return prev(url, opts); };
 r = await ask("American school in Al Qusais for Grade 3");
-check("Lite models busy -> Gemma, rules inside first turn", r.provider === "gemini:gemma-4-31b-it" && !gemmaBody.systemInstruction && /RETRIEVED|QUESTION/.test(gemmaBody.contents[0].parts[0].text) && /assistant/.test(gemmaBody.contents[0].parts[0].text), r.provider);
+check("Lite models busy -> Gemma, rules inside first turn", r.provider === "gemini:gemma-4-31b-it" && !gemmaBody.systemInstruction && /RETRIEVED|QUESTION/.test(gemmaBody.contents[0].parts[0].text) && /Ezlyn/.test(gemmaBody.contents[0].parts[0].text), r.provider);
 globalThis.fetch = prev;
 
 behaviour = () => ({ status: 503, body: { error: { message: "overloaded" } } });
