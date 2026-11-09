@@ -26,6 +26,7 @@ jobs:
         run: |
           python3 scripts/build-data.py
           python3 scripts/build-web.py
+          python3 scripts/build-pages.py
       - name: Check search still works
         run: node scripts/test.mjs
       - name: Commit if fees changed
@@ -35,7 +36,7 @@ jobs:
           else
             git config user.name "schoolscout-bot"
             git config user.email "schoolscout-bot@users.noreply.github.com"
-            git add data schools.json api/_schools.js index.html dist
+            git add data schools.json api/_schools.js index.html dist schools areas curriculum find sitemap.xml site.css
             git commit -m "Refresh KHDA fees ($(date -u +%Y-%m-%d))"
             git push
           fi
