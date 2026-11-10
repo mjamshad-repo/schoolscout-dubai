@@ -15,6 +15,9 @@ FAVICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect wi
 import urllib.parse
 open(os.path.join(ROOT, "favicon.svg"), "w").write(FAVICON)
 ICON_TAGS = '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' + urllib.parse.quote(FAVICON) + '">\n<meta name="theme-color" content="#0b6e6e">\n'
+# Real icon files for the website (Google Search can't read an icon embedded in the page); the artifact keeps the embedded one.
+WEB_ICONS = ('<link rel="icon" href="/favicon.ico" sizes="48x48">\n<link rel="icon" type="image/svg+xml" href="/favicon.svg">\n'
+  '<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n<link rel="manifest" href="/site.webmanifest">\n')
 HEAD = ICON_TAGS + '''<title>Dubai School Fees · Dubai school fees, KHDA ratings and AI shortlist</title>
 <meta name="description" content="Official KHDA-approved fees by grade for Dubai private schools, with ratings, distance from your area and a free AI shortlist.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,14 +25,15 @@ HEAD = ICON_TAGS + '''<title>Dubai School Fees · Dubai school fees, KHDA rating
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 '''
+WEB_HEAD = HEAD.replace(ICON_TAGS, WEB_ICONS + '<meta name="theme-color" content="#0b6e6e">\n', 1)
 def strip_exports(js): return re.sub(r"^export\s+", "", js, flags=re.M)
 
 # website
 web = body.replace('"__MODE__"', '"web"').replace("__DATA__", "[]").replace("/*__RETRIEVAL__*/", "")
 web_html = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
   '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
-  '<link rel="apple-touch-icon" href="/favicon.svg">\n<meta property="og:title" content="Dubai School Fees">\n<meta property="og:description" content="Dubai school fees by grade, KHDA ratings and distance, with a free AI shortlist.">\n<meta property="og:url" content="https://www.dubaischoolfees.com/">\n<meta property="og:type" content="website">\n<link rel="canonical" href="https://www.dubaischoolfees.com/">\n'
-  + HEAD + "<style>\nhtml{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}\n"
+  '<meta property="og:title" content="Dubai School Fees">\n<meta property="og:description" content="Dubai school fees by grade, KHDA ratings and distance, with a free AI shortlist.">\n<meta property="og:url" content="https://www.dubaischoolfees.com/">\n<meta property="og:type" content="website">\n<link rel="canonical" href="https://www.dubaischoolfees.com/">\n'
+  + WEB_HEAD + "<style>\nhtml{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}\n"
   ":root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}\n" + css + "</style>\n</head>\n<body>\n" + web + "\n</body>\n</html>\n")
 open(os.path.join(ROOT, "index.html"), "w").write(web_html)
 
@@ -64,7 +68,7 @@ a{color:var(--accent)}em{color:var(--muted)}.back{font-weight:600;text-decoratio
 footer{border-top:1px solid var(--line);margin-top:32px;padding-top:14px;color:var(--muted);font-size:.85rem}"""
 for name,title in (("terms","Terms of use"),("privacy","Privacy policy")):
     page=('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-      + ICON_TAGS + f'<title>{title} · Dubai School Fees</title>\n<link rel="canonical" href="https://www.dubaischoolfees.com/{name}.html">\n'
+      + WEB_ICONS + '<meta name="theme-color" content="#0b6e6e">\n' + f'<title>{title} · Dubai School Fees</title>\n<link rel="canonical" href="https://www.dubaischoolfees.com/{name}.html">\n'
       '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Source+Sans+3:wght@400;600&display=swap">\n'
       f"<style>{LEGAL_CSS}</style>\n</head>\n<body>\n<main>\n<a class=\"back\" href=\"/\">← Dubai School Fees</a>\n"
       + md2html(rd(f"web/legal/{name}.md")) + '\n<footer>Dubai School Fees · Information only · Not affiliated with KHDA or the Government of Dubai.</footer>\n</main>\n</body>\n</html>\n')
